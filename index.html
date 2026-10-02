@@ -1,0 +1,1238 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2a1748">
+<title>В голове у бабушки</title>
+<style>
+:root{
+  --ink:#1d1330; --paper:#fff6dc; --yellow:#ffd23f; --red:#e63946; --purple:#5b2a86;
+  --pink:#ff8fab; --green:#7bd389; --blue:#7fc4ef;
+  --font:"Comic Sans MS","Comic Neue","Chalkboard SE","Marker Felt","Trebuchet MS",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{
+  height:100vh;height:100dvh;overflow:hidden;color:var(--ink);font-family:var(--font);
+  background:
+    radial-gradient(circle at 1px 1px, rgba(255,255,255,.09) 1.6px, transparent 2.2px) 0 0/14px 14px,
+    linear-gradient(160deg,#41216f,#1f1036);
+  -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;
+}
+button{font-family:var(--font);touch-action:manipulation}
+.hidden{display:none !important}
+
+#app{height:100%;display:flex;flex-direction:column;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+
+/* HUD */
+.hud{flex:none;display:flex;align-items:center;gap:10px;padding:8px 12px}
+.badge{flex:none;background:var(--paper);border:3px solid var(--ink);border-radius:12px;padding:4px 10px;font-weight:900;font-size:clamp(13px,1.2vw + 8px,18px);box-shadow:3px 3px 0 var(--ink);white-space:nowrap}
+.hud-mid{flex:1;min-width:0}
+.pbar-label{color:#fff;font-weight:700;font-size:clamp(12px,1vw + 8px,16px);text-shadow:2px 2px 0 var(--ink);margin-bottom:3px;line-height:1.15}
+.pbar{height:16px;background:#fff;border:3px solid var(--ink);border-radius:10px;overflow:hidden;box-shadow:3px 3px 0 var(--ink)}
+#pFill{height:100%;width:0;background:repeating-linear-gradient(45deg,#9bc53d 0 10px,#7a9a2a 10px 20px);transition:width .6s cubic-bezier(.3,1.4,.5,1)}
+.icon-btn{flex:none;width:52px;height:52px;border-radius:50%;border:3px solid var(--ink);background:var(--paper);font-size:24px;cursor:pointer;box-shadow:3px 3px 0 var(--ink);display:flex;align-items:center;justify-content:center;padding:0}
+.icon-btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+.hud-spacer{flex:1}
+
+.start-title{flex:none;text-align:center;padding:4px 12px 0}
+.start-title h1{margin:0;font-size:clamp(30px,5.5vw + 10px,64px);line-height:1.05;color:var(--yellow);letter-spacing:1px;
+  text-shadow:3px 3px 0 var(--ink),-3px 3px 0 var(--ink),3px -3px 0 var(--ink),-3px -3px 0 var(--ink),6px 7px 0 var(--red);
+  transform:rotate(-2deg)}
+.start-title p{margin:6px 0 0;color:#fff;font-size:clamp(14px,1vw + 10px,19px);text-shadow:2px 2px 0 var(--ink)}
+
+/* Stage */
+.stage{flex:1;min-height:0;position:relative}
+#scene{position:absolute;inset:0;width:100%;height:100%;overflow:visible;display:block}
+.think{position:absolute;left:50%;top:6px;transform:translateX(-50%);width:min(92%,440px);background:var(--yellow);border:4px solid var(--ink);border-radius:14px;
+  box-shadow:5px 5px 0 var(--ink);padding:8px 12px;text-align:center;z-index:2}
+.think-title{font-weight:900;font-size:13px;letter-spacing:2px;color:var(--red)}
+#thinkText{font-weight:900;font-size:clamp(16px,1.5vw + 10px,22px);min-height:1.3em;line-height:1.2}
+#thinkText.pop{animation:pop .25s ease-out}
+.think-bar{height:12px;border:3px solid var(--ink);border-radius:8px;background:#fff;margin-top:6px;overflow:hidden}
+#thinkFill{height:100%;width:0;background:var(--red);transition:width .2s}
+#thinkPct{font-size:13px;font-weight:700;margin-top:2px}
+
+/* Controls */
+.controls{flex:none;display:flex;flex-direction:column;align-items:center;gap:6px;padding:8px 12px 14px}
+.big-btn{font-weight:900;font-size:clamp(20px,2vw + 12px,30px);padding:12px 28px;min-height:64px;min-width:min(86vw,320px);border:4px solid var(--ink);border-radius:18px;
+  background:var(--yellow);color:var(--ink);box-shadow:0 6px 0 var(--ink);cursor:pointer;transition:transform .08s,box-shadow .08s,filter .2s;line-height:1.15}
+.big-btn:hover:not(:disabled){filter:brightness(1.06)}
+.big-btn:active:not(:disabled){transform:translateY(4px);box-shadow:0 2px 0 var(--ink)}
+.big-btn:disabled{filter:grayscale(.85) brightness(.75);cursor:default}
+.big-btn.pulse:not(:disabled){animation:pulse 1.4s ease-in-out infinite}
+.hint{color:#fff;font-size:clamp(13px,1vw + 9px,16px);text-align:center;text-shadow:2px 2px 0 var(--ink);min-height:1.2em;max-width:560px}
+
+/* Overlays */
+.overlay{position:fixed;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;padding:12px;background:rgba(20,8,40,.62)}
+.card{position:relative;width:100%;max-width:580px;max-height:100%;display:flex;flex-direction:column;background:var(--paper);border:5px solid var(--ink);border-radius:20px;
+  box-shadow:8px 8px 0 var(--ink);animation:cardIn .4s cubic-bezier(.2,1.5,.4,1)}
+.card-scroll{overflow:auto;min-height:0;padding:16px 16px 8px;-webkit-overflow-scrolling:touch}
+.btn-row{flex:none;padding:10px 14px 14px;display:flex;justify-content:center;flex-wrap:wrap;gap:10px;border-top:3px dashed rgba(29,19,48,.25)}
+.btn-row .big-btn{min-width:min(100%,280px)}
+
+/* Order */
+.order-head{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.mini{width:92px;height:100px;flex:none;overflow:visible}
+.bubble{position:relative;background:#fff;border:3px solid var(--ink);border-radius:16px;padding:8px 12px;font-weight:900;font-size:clamp(15px,1vw + 11px,19px);box-shadow:3px 3px 0 var(--ink)}
+.bubble::before{content:"";position:absolute;left:-14px;top:50%;margin-top:-9px;border:9px solid transparent;border-right:14px solid var(--ink);border-left:0}
+.bubble::after{content:"";position:absolute;left:-9px;top:50%;margin-top:-6px;border:6px solid transparent;border-right:10px solid #fff;border-left:0}
+.order-paper{position:relative;background:#fffdf3;border:3px solid var(--ink);border-radius:6px;padding:14px 14px 12px;
+  background-image:repeating-linear-gradient(transparent 0 27px,rgba(127,196,239,.35) 27px 28px)}
+.order-org{text-align:center;font-size:12px;letter-spacing:1px;text-transform:uppercase;opacity:.75;line-height:1.3}
+.order-title{text-align:center;font-weight:900;font-size:clamp(20px,2vw + 12px,28px);margin-top:4px}
+.order-date{text-align:center;font-size:clamp(14px,1vw + 10px,17px);font-style:italic;margin-bottom:8px}
+.order-text{font-size:clamp(17px,1.2vw + 12px,22px);line-height:1.38;margin:6px 0 8px;font-weight:700}
+.order-meta{font-size:14px;line-height:1.35;opacity:.85}
+.order-sign{display:flex;align-items:flex-end;gap:8px;min-height:62px;font-size:14px;margin-top:6px}
+.scribble{font-size:24px;font-style:italic;color:#2b4fa8;transform:rotate(-6deg);display:inline-block}
+.stamp{position:absolute;right:10px;bottom:8px;border:5px double var(--red);color:var(--red);font-weight:900;padding:4px 10px;font-size:clamp(18px,2vw + 10px,26px);
+  letter-spacing:2px;border-radius:8px;opacity:0;transform:rotate(-14deg) scale(3);pointer-events:none;background:rgba(255,255,255,.15)}
+.stamp.slam{animation:slam .3s cubic-bezier(.2,1.5,.4,1) .45s forwards}
+.quip{margin-top:12px;background:#fff;border:4px solid var(--ink);border-radius:18px;padding:12px 14px;font-weight:900;font-size:clamp(18px,1.4vw + 12px,24px);
+  box-shadow:4px 4px 0 var(--ink);animation:pop .35s ease-out;line-height:1.3}
+.quip small{display:block;margin-top:6px;font-size:13px;font-weight:700;opacity:.65}
+.react-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:10px 12px 14px;flex:none;border-top:3px dashed rgba(29,19,48,.25)}
+.r-btn{min-height:64px;border:4px solid var(--ink);border-radius:16px;font-weight:900;font-size:clamp(15px,1.2vw + 11px,21px);box-shadow:0 5px 0 var(--ink);cursor:pointer;padding:6px 4px;line-height:1.1;color:var(--ink)}
+.r-btn span{display:block;font-size:1.5em;line-height:1.1}
+.r-btn:active:not(:disabled){transform:translateY(4px);box-shadow:0 1px 0 var(--ink)}
+.r-btn:disabled{opacity:.45;cursor:default}
+.r-btn.chosen{opacity:1;outline:4px solid var(--red);outline-offset:2px}
+.r-ok{background:#bde0fe}.r-ign{background:#cdeac0}.r-cry{background:#ffc8dd}
+
+/* Debuff */
+.med-head{display:flex;align-items:center;justify-content:center;gap:8px;font-weight:900;letter-spacing:1px;font-size:clamp(15px,1vw + 11px,19px);color:#fff;background:var(--red);
+  border:3px solid var(--ink);border-radius:10px;padding:6px 10px;text-align:center}
+.cross{font-size:1.3em}
+.debuff-label{text-align:center;margin-top:12px;font-size:15px}
+.debuff-name{text-align:center;font-weight:900;font-size:clamp(28px,3vw + 16px,44px);color:var(--purple);margin:4px 0;text-shadow:3px 3px 0 #ffd23f;line-height:1.1;animation:wobble .6s ease-out}
+.debuff-flavor{font-size:clamp(17px,1.2vw + 12px,21px);line-height:1.38;text-align:center;margin:8px 4px 12px;font-weight:700}
+.debuff-fx{background:#f0ffe0;border:3px solid var(--ink);border-radius:12px;padding:8px 12px;font-size:16px;line-height:1.35}
+.debuff-count{text-align:center;margin-top:10px;font-weight:900;font-size:17px}
+
+/* Final */
+.final-card{max-width:760px}
+.final-title{margin:0 0 10px;text-align:center;font-size:clamp(26px,3vw + 14px,42px);color:var(--red);text-shadow:3px 3px 0 var(--yellow);line-height:1.1}
+.final-card h3{margin:16px 0 6px;font-size:20px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.tile{background:#fff;border:3px solid var(--ink);border-radius:12px;padding:8px 10px;box-shadow:3px 3px 0 var(--ink)}
+.tile b{display:block;font-size:26px;line-height:1.1}
+.tile span{font-size:14px;line-height:1.25;display:block}
+.tile.wide{grid-column:1/-1}
+.order-list{max-height:34vh;overflow:auto;margin:0;padding:8px 10px 8px 34px;background:#fffdf3;border:3px solid var(--ink);border-radius:10px;font-size:15px;line-height:1.35}
+.order-list li{margin-bottom:8px}
+.order-list i{opacity:.7;font-size:13px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{background:#e9d8ff;border:3px solid var(--ink);border-radius:999px;padding:4px 10px;font-weight:700;font-size:15px}
+.medal{margin:16px auto 6px;text-align:center;background:radial-gradient(circle,#fff3b0,#ffd23f);border:4px solid var(--ink);border-radius:20px;padding:10px 14px;box-shadow:5px 5px 0 var(--ink);max-width:520px}
+.medal-label{font-size:13px;letter-spacing:2px;text-transform:uppercase}
+#fTitle{font-weight:900;font-size:clamp(22px,2vw + 14px,32px);line-height:1.15}
+.final-phrase{text-align:center;font-size:clamp(17px,1vw + 13px,21px);font-weight:700;font-style:italic;margin:12px 6px 4px}
+
+/* SVG helpers */
+[data-sym]{display:none}
+[data-emo="angry"] [data-sym="angry"],[data-emo="smug"] [data-sym="smug"],[data-emo="shocked"] [data-sym="shocked"],[data-emo="crazy"] [data-sym="crazy"]{display:inline}
+[data-sym] > *{transform-box:fill-box;transform-origin:center;animation:wig .5s ease-in-out infinite alternate}
+[data-sym] > *:nth-child(2){animation-delay:-.25s}
+.mini [data-lid]{display:none}
+.mini[data-emo="smug"] [data-lid]{display:inline}
+
+@keyframes pop{0%{transform:scale(.6);opacity:0}70%{transform:scale(1.08);opacity:1}100%{transform:scale(1)}}
+@keyframes cardIn{0%{transform:scale(.5) rotate(-6deg);opacity:0}100%{transform:none;opacity:1}}
+@keyframes slam{0%{opacity:0;transform:rotate(-14deg) scale(3)}100%{opacity:.92;transform:rotate(-14deg) scale(1)}}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+@keyframes wobble{0%{transform:scale(.3) rotate(-10deg)}50%{transform:scale(1.15) rotate(4deg)}75%{transform:scale(.95) rotate(-2deg)}100%{transform:none}}
+@keyframes wig{from{transform:scale(.88) rotate(-6deg)}to{transform:scale(1.12) rotate(6deg)}}
+
+/* Узкий ландшафт (телефон боком) */
+@media (orientation:landscape) and (max-height:540px){
+  #app{display:grid;grid-template-columns:1fr minmax(210px,34%);grid-template-rows:auto auto 1fr}
+  .hud{grid-column:1/-1;padding:4px 10px}
+  .start-title{grid-column:1/-1}
+  .start-title h1{font-size:clamp(24px,5vh + 8px,40px)}
+  .start-title p{display:none}
+  .stage{grid-column:1;grid-row:3}
+  .controls{grid-column:2;grid-row:3;justify-content:center}
+  .big-btn{min-width:0;width:100%;font-size:22px}
+  .icon-btn{width:44px;height:44px;font-size:20px}
+  .mini{width:64px;height:70px}
+  .order-sign{min-height:52px}
+  .r-btn{min-height:54px}
+  .r-btn span{display:inline;font-size:1.2em}
+  .card{max-width:min(880px,96vw)}
+  .card-scroll{padding:10px 14px 6px}
+  .order-head{margin-bottom:4px}
+}
+@media (max-width:380px){
+  .r-btn{font-size:14px}
+  .card-scroll{padding:12px 10px 6px}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="hud">
+    <span class="badge hidden" id="orderBadge">Приказов: 0</span>
+    <div class="hud-mid hidden" id="hudMid">
+      <div class="pbar-label">Заполнение мозга дребеденью: <b id="pText">0/10</b></div>
+      <div class="pbar"><div id="pFill"></div></div>
+    </div>
+    <div class="hud-spacer" id="hudSpacer"></div>
+    <button class="icon-btn" id="muteBtn" aria-label="Выключить звук" title="Звук">🔊</button>
+  </header>
+
+  <div class="start-title" id="startTitle">
+    <h1>В голове у бабушки</h1>
+    <p>Симулятор работы под мудрым руководством. Ваше мнение очень важно. Для протокола.</p>
+  </div>
+
+  <main class="stage" id="stage">
+    <svg id="scene" viewBox="0 0 400 400" preserveAspectRatio="xMidYMid meet" data-emo="neutral" role="img" aria-label="Голова бабушки-начальницы в разрезе">
+      <defs>
+        <radialGradient id="gGlow"><stop offset="0" stop-color="#ffffff"/><stop offset=".3" stop-color="#fff7a8"/><stop offset="1" stop-color="#ffd23f" stop-opacity="0"/></radialGradient>
+        <radialGradient id="gCav" cx=".5" cy=".42" r=".65"><stop offset="0" stop-color="#8a2f47"/><stop offset="1" stop-color="#3a0d1c"/></radialGradient>
+        <radialGradient id="gLens" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#ffffff" stop-opacity=".85"/><stop offset=".4" stop-color="#bfe8ff" stop-opacity=".35"/><stop offset="1" stop-color="#7fc4ef" stop-opacity=".25"/></radialGradient>
+        <pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="6" stroke="#1d1330" stroke-width="1.4" opacity=".3"/></pattern>
+        <clipPath id="medClip"><circle cx="200" cy="195" r="188"/></clipPath>
+        <clipPath id="brainClip"><path id="brainClipPath" d="M0 0"/></clipPath>
+      </defs>
+
+      <g id="medallion">
+        <circle id="medCircle" cx="200" cy="195" r="188" fill="#f3dfb0"/>
+        <g clip-path="url(#medClip)"><g id="rays"></g></g>
+        <circle cx="200" cy="195" r="188" fill="none" stroke="#1d1330" stroke-width="6"/>
+      </g>
+
+      <g id="headWrap">
+        <!-- плечики (маленькое тело, большая голова) -->
+        <path class="sk" d="M 116 404 C 126 380 162 368 196 368 L 262 368 C 296 368 326 380 336 404 Z" fill="#7b3fa0" stroke="#1d1330" stroke-width="6" stroke-linejoin="round"/>
+        <path d="M 150 404 Q 160 386 176 380 M 300 404 Q 292 388 280 382" fill="none" stroke="#1d1330" stroke-width="2.5" opacity=".5"/>
+        <path d="M 204 320 L 204 374 Q 230 386 256 374 L 256 330 Z" fill="#efb995" stroke="#1d1330" stroke-width="6" stroke-linejoin="round"/>
+        <path d="M 204 344 L 256 356 L 256 376 L 204 376 Z" fill="url(#hatch)"/>
+        <path d="M 180 370 Q 190 388 203 376 Q 214 392 229 378 Q 244 392 256 376 Q 268 388 278 370 L 268 362 L 190 362 Z" fill="#ffffff" stroke="#1d1330" stroke-width="4" stroke-linejoin="round"/>
+        <g id="pearls" fill="#fffaf0" stroke="#1d1330" stroke-width="2">
+          <circle cx="196" cy="388" r="5"/><circle cx="207" cy="393" r="5"/><circle cx="218" cy="396" r="5"/><circle cx="229" cy="397" r="5"/><circle cx="240" cy="396" r="5"/><circle cx="251" cy="393" r="5"/><circle cx="262" cy="388" r="5"/>
+        </g>
+
+        <!-- голова: огромный лоб, нос-крюк, поджатые губы, подбородок-лопата -->
+        <path id="headShape" class="sk" d="M 180 348 C 96 334 52 262 58 186 C 64 104 128 50 210 50 C 296 50 342 108 334 172 C 332 200 338 250 344 286 C 346 296 340 302 338 306 C 344 312 344 322 338 328 C 354 348 350 384 306 382 C 282 381 264 362 248 356 C 228 358 205 352 180 348 Z" fill="#f4c39f" stroke="#1d1330" stroke-width="6" stroke-linejoin="round"/>
+        <!-- штриховка теней -->
+        <path d="M 232 338 Q 280 368 334 348 Q 340 374 306 378 Q 268 374 232 338 Z" fill="url(#hatch)"/>
+        <path d="M 262 364 Q 294 386 330 372" fill="none" stroke="#1d1330" stroke-width="3" stroke-linecap="round"/>
+        <path d="M 322 304 l 2 -6 M 327 306 l 3 -5 M 323 327 l 2 6" fill="none" stroke="#a8644c" stroke-width="2" stroke-linecap="round"/>
+
+        <!-- волосы: пышная химия с фиолетовым отливом -->
+        <path id="hairPath" d="M 186 344 C 100 332 56 262 60 186 C 64 106 128 52 210 52 C 254 52 292 66 314 92" fill="none" stroke="#1d1330" stroke-width="42" stroke-linecap="round"/>
+        <path id="hairPath2" d="M 186 344 C 100 332 56 262 60 186 C 64 106 128 52 210 52 C 254 52 292 66 314 92" fill="none" stroke="#c9bff0" stroke-width="33" stroke-linecap="round"/>
+        <g id="curls"></g>
+
+        <!-- начёс-«улей» -->
+        <g id="bun">
+          <g data-st="3" fill="none" stroke-linecap="round">
+            <g stroke="#1d1330" stroke-width="9"><path d="M 70 34 q -24 -10 -28 -34"/><path d="M 108 12 q 6 -24 26 -28"/><path d="M 132 40 q 26 -6 32 -28"/><path d="M 56 70 q -28 6 -38 -8"/><path d="M 88 12 q -4 -22 8 -32"/><path d="M 52 50 q -32 -4 -42 10"/></g>
+            <g stroke="#c9bff0" stroke-width="4"><path d="M 70 34 q -24 -10 -28 -34"/><path d="M 108 12 q 6 -24 26 -28"/><path d="M 132 40 q 26 -6 32 -28"/><path d="M 56 70 q -28 6 -38 -8"/><path d="M 88 12 q -4 -22 8 -32"/><path d="M 52 50 q -32 -4 -42 10"/></g>
+          </g>
+          <ellipse class="sk" cx="96" cy="50" rx="44" ry="40" fill="#c9bff0" stroke="#1d1330" stroke-width="5"/>
+          <path d="M 70 52 Q 94 22 120 48 Q 100 74 84 58 Q 92 44 104 50" fill="none" stroke="#9d92cf" stroke-width="4" stroke-linecap="round"/>
+          <path d="M 64 32 q 8 -8 16 -4 M 112 22 q 10 0 14 8 M 122 66 q 8 -2 10 -10" fill="none" stroke="#1d1330" stroke-width="2.5" stroke-linecap="round"/>
+          <g transform="rotate(-35 96 50)">
+            <rect x="50" y="44" width="92" height="11" rx="2" fill="#ffd23f" stroke="#1d1330" stroke-width="3"/>
+            <polygon points="142,44 156,49.5 142,55" fill="#f4c39f" stroke="#1d1330" stroke-width="3" stroke-linejoin="round"/>
+            <rect x="43" y="44" width="9" height="11" fill="#ff8fab" stroke="#1d1330" stroke-width="3"/>
+          </g>
+        </g>
+
+        <!-- огромное ухо с клипсой и слуховая трубка -->
+        <g id="ear">
+          <ellipse class="sk" cx="158" cy="254" rx="22" ry="36" fill="#efb995" stroke="#1d1330" stroke-width="5"/>
+          <path d="M 164 232 Q 146 250 160 278 M 158 246 q -6 8 0 16" fill="none" stroke="#a8644c" stroke-width="4" stroke-linecap="round"/>
+          <circle cx="154" cy="294" r="10" fill="#7fc4ef" stroke="#1d1330" stroke-width="3.5"/>
+          <circle cx="151" cy="291" r="3" fill="#ffffff"/>
+        </g>
+        <g data-st="4">
+          <path d="M 158 262 Q 116 272 90 304" fill="none" stroke="#1d1330" stroke-width="14" stroke-linecap="round"/>
+          <path d="M 158 262 Q 116 272 90 304" fill="none" stroke="#e0ad45" stroke-width="7" stroke-linecap="round"/>
+          <ellipse cx="80" cy="316" rx="27" ry="16" transform="rotate(-50 80 316)" fill="#f2c25a" stroke="#1d1330" stroke-width="4"/>
+          <ellipse cx="78" cy="318" rx="14" ry="7" transform="rotate(-50 78 318)" fill="#7a5410"/>
+        </g>
+
+        <!-- разрез черепа -->
+        <ellipse cx="190" cy="150" rx="118" ry="86" fill="none" stroke="#1d1330" stroke-width="2.5" stroke-dasharray="7 6" opacity=".7"/>
+        <ellipse cx="190" cy="150" rx="113" ry="81" fill="#1d1330"/>
+        <ellipse cx="190" cy="150" rx="108" ry="76" fill="url(#gCav)" stroke="#f3e3c3" stroke-width="9"/>
+        <ellipse cx="190" cy="150" rx="103" ry="71" fill="none" stroke="#1d1330" stroke-width="2.5" opacity=".6"/>
+
+        <!-- мозг -->
+        <g id="brainGroup">
+          <path d="M 174 196 Q 170 214 182 224 L 198 224 Q 196 210 204 196 Z" fill="#e889ad" stroke="#1d1330" stroke-width="4" id="stem"/>
+          <ellipse id="cereb" cx="146" cy="204" rx="26" ry="14" fill="#f48fb8" stroke="#1d1330" stroke-width="4"/>
+          <path id="cerebLines" d="M 126 200 q 20 4 40 0 M 124 207 q 22 4 44 0" fill="none" stroke="#c2457a" stroke-width="2.5" stroke-linecap="round"/>
+          <path id="brainBase" d="M0 0" fill="#ff9fc6" stroke="#1d1330" stroke-width="5" stroke-linejoin="round"/>
+          <g clip-path="url(#brainClip)">
+            <path id="gyriHi" d="M0 0" fill="none" stroke="#ffffff" stroke-opacity=".45" stroke-width="2" stroke-linecap="round"/>
+            <path id="gyri" d="M0 0" fill="none" stroke="#c2457a" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+            <path id="sulci" d="M0 0" fill="none" stroke="#1d1330" stroke-width="3.6" stroke-linecap="round"/>
+            <ellipse cx="200" cy="218" rx="120" ry="38" fill="url(#hatch)"/>
+          </g>
+          <g id="synapses"></g>
+          <g id="neurons"></g>
+        </g>
+        <!-- паутина -->
+        <g data-st="6" stroke="#ffffff" stroke-width="1.6" fill="none" opacity=".85">
+          <path d="M 118 100 L 160 92 M 118 100 L 152 116 M 118 100 L 128 132 M 118 100 L 104 120"/>
+          <path d="M 132 97 Q 130 104 127 106 Q 122 112 113 112 M 146 94 Q 142 110 138 112 Q 126 124 109 117"/>
+          <path d="M 140 113 L 140 136"/><circle cx="140" cy="139" r="4" fill="#1d1330" stroke="none"/>
+        </g>
+
+        <!-- кубики -->
+        <g id="diceTrails"></g>
+        <g id="diceLayer"></g>
+
+        <!-- лицо -->
+        <ellipse id="blush" cx="286" cy="266" rx="20" ry="11" fill="#ff7aa2" opacity=".5"/>
+        <!-- губы «куриной гузкой» -->
+        <path d="M 312 317 Q 322 304 340 311 Q 348 318 340 326 Q 324 334 312 317 Z" fill="#d6336c" stroke="#1d1330" stroke-width="3" stroke-linejoin="round"/>
+        <path d="M 320 311 q 6 -2 12 1" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" opacity=".6"/>
+        <path id="mouth" d="M 316 314 Q 324 317 333 313" fill="none" stroke="#5a1020" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <!-- нос-картошка-крюк -->
+        <g id="nose">
+          <path class="sk" d="M 330 192 C 348 212 372 236 386 258 C 408 286 396 316 368 310 C 356 308 350 300 348 294 C 340 298 334 296 332 290" fill="#f4c39f" stroke="#1d1330" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/>
+          <ellipse cx="380" cy="290" rx="14" ry="11" fill="#ff8a8a" opacity=".55"/>
+          <path d="M 352 300 Q 372 312 392 296 Q 388 312 368 310 Q 356 308 352 300 Z" fill="url(#hatch)"/>
+          <path d="M 364 304 q -6 -7 -13 -3" fill="none" stroke="#1d1330" stroke-width="3" stroke-linecap="round"/>
+          <path d="M 352 222 q 14 16 22 34" fill="none" stroke="#ffffff" stroke-width="4" stroke-linecap="round" opacity=".55"/>
+          <circle cx="364" cy="250" r="6" fill="#9a5b3a" stroke="#1d1330" stroke-width="2"/>
+          <path d="M 364 244 q 2 -9 9 -11 M 366 245 q 7 -5 12 -3" fill="none" stroke="#1d1330" stroke-width="1.5"/>
+        </g>
+        <path d="M 284 244 q 16 8 32 0" fill="none" stroke="#a8644c" stroke-width="2.5" stroke-linecap="round"/>
+        <g data-st="1" stroke="#a8644c" stroke-width="3" fill="none" stroke-linecap="round">
+          <path d="M 266 192 l -10 -6 M 265 204 l -12 0 M 266 216 l -10 6"/>
+          <path d="M 340 290 q -16 14 -10 34"/><path d="M 214 362 q 20 6 36 0"/>
+        </g>
+        <g data-st="6" stroke="#8a5a6a" stroke-width="3" fill="none" stroke-linecap="round">
+          <path d="M 282 250 q 18 10 36 0"/><path d="M 286 258 q 14 7 28 0"/>
+        </g>
+        <g id="eye">
+          <ellipse id="eyeWhite" cx="300" cy="205" rx="16" ry="14" fill="#ffffff" stroke="#1d1330" stroke-width="3"/>
+          <circle id="pupil" cx="304" cy="205" r="7" fill="#1d1330"/>
+          <circle id="pupilHi" cx="306" cy="203" r="2.2" fill="#ffffff"/>
+          <path id="lid" d="M 282 206 Q 300 180 318 206 Z" fill="#f4c39f" stroke="#1d1330" stroke-width="3" style="display:none"/>
+        </g>
+        <path id="brow" d="M 272 176 L 276 164 L 283 171 L 287 157 L 294 166 L 300 153 L 306 163 L 313 153 L 317 164 L 326 156 L 330 168 Q 300 164 272 176 Z" fill="#9a95b5" stroke="#1d1330" stroke-width="2.5" stroke-linejoin="round"/>
+        <g id="glasses">
+          <line x1="271" y1="200" x2="166" y2="226" stroke="#1d1330" stroke-width="5" stroke-linecap="round"/>
+          <circle cx="300" cy="205" r="30" fill="url(#gLens)" stroke="#1d1330" stroke-width="7"/>
+          <circle cx="300" cy="205" r="24" fill="none" stroke="#ffffff" stroke-width="2" opacity=".55"/>
+          <circle cx="300" cy="205" r="18" fill="none" stroke="#ffffff" stroke-width="1.5" opacity=".35"/>
+          <path data-st="2" d="M 288 180 l 6 10 l -6 7 l 11 9 l -3 11" fill="none" stroke="#1d1330" stroke-width="2.4" stroke-linejoin="round"/>
+          <path data-st="7" d="M 326 196 l -10 6 l 5 7 l -11 5 M 306 214 l 5 14 M 276 216 l 10 -4" fill="none" stroke="#1d1330" stroke-width="2.4" stroke-linejoin="round"/>
+        </g>
+        <g data-st="8">
+          <rect x="240" y="270" width="36" height="12" rx="5" fill="#f3c58f" stroke="#1d1330" stroke-width="3" transform="rotate(35 258 276)"/>
+          <rect x="240" y="270" width="36" height="12" rx="5" fill="#f3c58f" stroke="#1d1330" stroke-width="3" transform="rotate(-35 258 276)"/>
+          <circle cx="318" cy="354" r="5" fill="#9a5b3a" stroke="#1d1330" stroke-width="1.5"/>
+          <path d="M 318 349 q 3 -8 9 -10" stroke="#1d1330" stroke-width="1.5" fill="none"/>
+        </g>
+
+        <!-- комиксные эмоции -->
+        <g data-sym="angry">
+          <g><path d="M 340 92 Q 347 92 347 85 M 353 85 Q 353 92 360 92 M 360 98 Q 353 98 353 105 M 347 105 Q 347 98 340 98" fill="none" stroke="#e63946" stroke-width="5" stroke-linecap="round"/></g>
+          <g><polygon points="352,128 366,128 358,142 370,142 346,172 354,150 342,150" fill="#ffd23f" stroke="#1d1330" stroke-width="3" stroke-linejoin="round"/></g>
+        </g>
+        <g data-sym="smug">
+          <g><path d="M 352 96 L 356 108 L 368 112 L 356 116 L 352 128 L 348 116 L 336 112 L 348 108 Z" fill="#ffffff" stroke="#1d1330" stroke-width="3" stroke-linejoin="round"/></g>
+          <g><path d="M 370 140 L 373 148 L 381 151 L 373 154 L 370 162 L 367 154 L 359 151 L 367 148 Z" fill="#ffd23f" stroke="#1d1330" stroke-width="3" stroke-linejoin="round"/></g>
+        </g>
+        <g data-sym="shocked">
+          <g><path d="M 340 128 Q 332 142 340 148 Q 348 142 340 128 Z" fill="#7fd3ff" stroke="#1d1330" stroke-width="3"/></g>
+          <g><path d="M 362 80 L 372 80 L 369 112 L 365 112 Z M 367 118 a 5 5 0 1 0 0.1 0" fill="#e63946" stroke="#1d1330" stroke-width="3" stroke-linejoin="round"/></g>
+        </g>
+        <g data-sym="crazy">
+          <g><path d="M 352 110 a 3 3 0 1 1 6 0 a 6 6 0 1 1 -12 0 a 9 9 0 1 1 18 0 a 12 12 0 1 1 -24 0" fill="none" stroke="#7b3fa0" stroke-width="3.5" stroke-linecap="round"/></g>
+          <g><path d="M 368 150 L 371 158 L 379 161 L 371 164 L 368 172 L 365 164 L 357 161 L 365 158 Z" fill="#ff8fab" stroke="#1d1330" stroke-width="3" stroke-linejoin="round"/></g>
+        </g>
+      </g>
+      <g id="fx"></g>
+    </svg>
+
+    <div class="think hidden" id="thinkBox" aria-live="polite">
+      <div class="think-title">ИДЁТ МЫШЛЕНИЕ</div>
+      <div id="thinkText"></div>
+      <div class="think-bar"><div id="thinkFill"></div></div>
+      <div id="thinkPct"></div>
+    </div>
+  </main>
+
+  <footer class="controls">
+    <button class="big-btn pulse" id="startBtn">Начать смену</button>
+    <button class="big-btn pulse hidden" id="rollBtn">🎲 Бросить кубики</button>
+    <div class="hint" id="hint">Смена длится, пока мозг не закончится.</div>
+  </footer>
+</div>
+
+<!-- Приказ -->
+<div class="overlay hidden" id="orderOv">
+  <div class="card" role="dialog" aria-label="Приказ">
+    <div class="card-scroll" id="orderScroll">
+      <div class="order-head">
+        <svg class="mini" id="mini" viewBox="0 0 120 130" data-emo="neutral" aria-hidden="true">
+          <defs><pattern id="hatchMini" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="5" stroke="#1d1330" stroke-width="1.2" opacity=".35"/></pattern></defs>
+          <ellipse cx="60" cy="18" rx="28" ry="22" fill="#c9bff0" stroke="#1d1330" stroke-width="4"/>
+          <path d="M 44 14 q 8 -10 18 -2 q 8 -8 16 2" fill="none" stroke="#9d92cf" stroke-width="3" stroke-linecap="round"/>
+          <ellipse cx="24" cy="78" rx="9" ry="14" fill="#efb995" stroke="#1d1330" stroke-width="3.5"/>
+          <ellipse cx="96" cy="78" rx="9" ry="14" fill="#efb995" stroke="#1d1330" stroke-width="3.5"/>
+          <circle cx="23" cy="94" r="4" fill="#7fc4ef" stroke="#1d1330" stroke-width="2"/><circle cx="97" cy="94" r="4" fill="#7fc4ef" stroke="#1d1330" stroke-width="2"/>
+          <path d="M 26 66 C 24 40 96 40 94 66 C 98 96 86 120 60 120 C 34 120 22 96 26 66 Z" fill="#f4c39f" stroke="#1d1330" stroke-width="4"/>
+          <path d="M 34 104 Q 60 124 86 104 Q 82 118 60 119 Q 38 118 34 104 Z" fill="url(#hatchMini)"/>
+          <path d="M 26 62 C 22 32 98 32 94 62 C 86 46 74 42 60 48 C 46 42 34 46 26 62 Z" fill="#c9bff0" stroke="#1d1330" stroke-width="4" stroke-linejoin="round"/>
+          <circle cx="44" cy="66" r="11" fill="#fff"/><circle cx="76" cy="66" r="11" fill="#fff"/>
+          <circle id="avPL" cx="44" cy="66" r="5" fill="#1d1330"/><circle id="avPR" cx="76" cy="66" r="5" fill="#1d1330"/>
+          <path data-lid d="M 33 66 Q 44 52 55 66 Z M 65 66 Q 76 52 87 66 Z" fill="#f4c39f" stroke="#1d1330" stroke-width="2.5"/>
+          <circle cx="44" cy="66" r="15" fill="url(#gLens)" stroke="#1d1330" stroke-width="4.5"/>
+          <circle cx="76" cy="66" r="15" fill="url(#gLens)" stroke="#1d1330" stroke-width="4.5"/>
+          <path d="M 59 66 L 61 66" stroke="#1d1330" stroke-width="4"/>
+          <path id="avBrowL" d="M 29 48 Q 44 38 57 47" fill="none" stroke="#8d88aa" stroke-width="7" stroke-linecap="round"/>
+          <path id="avBrowR" d="M 63 47 Q 76 38 91 48" fill="none" stroke="#8d88aa" stroke-width="7" stroke-linecap="round"/>
+          <path d="M 57 74 C 64 84 74 96 64 102 C 58 105 52 100 56 96" fill="#efb995" stroke="#1d1330" stroke-width="3" stroke-linejoin="round"/>
+          <circle cx="66" cy="90" r="2.5" fill="#9a5b3a"/>
+          <ellipse cx="34" cy="86" rx="7" ry="4" fill="#ff7aa2" opacity=".55"/><ellipse cx="86" cy="86" rx="7" ry="4" fill="#ff7aa2" opacity=".55"/>
+          <path id="avMouth" d="M 54 108 Q 60 110 66 107" fill="none" stroke="#b0174f" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M 40 122 Q 50 130 60 124 Q 70 130 80 122" fill="#fff" stroke="#1d1330" stroke-width="3"/>
+          <g data-sym="angry"><g><polygon points="98,10 110,10 103,22 113,22 92,46 99,28 89,28" fill="#ffd23f" stroke="#1d1330" stroke-width="2.5" stroke-linejoin="round"/></g><g><path d="M 10 14 Q 16 14 16 8 M 22 8 Q 22 14 28 14 M 28 20 Q 22 20 22 26 M 16 26 Q 16 20 10 20" fill="none" stroke="#e63946" stroke-width="4" stroke-linecap="round"/></g></g>
+          <g data-sym="smug"><g><path d="M 104 16 L 107 25 L 116 28 L 107 31 L 104 40 L 101 31 L 92 28 L 101 25 Z" fill="#fff" stroke="#1d1330" stroke-width="2.5"/></g><g><path d="M 14 22 L 16 28 L 22 30 L 16 32 L 14 38 L 12 32 L 6 30 L 12 28 Z" fill="#ffd23f" stroke="#1d1330" stroke-width="2.5"/></g></g>
+          <g data-sym="shocked"><g><path d="M 100 44 Q 93 56 100 62 Q 107 56 100 44 Z" fill="#7fd3ff" stroke="#1d1330" stroke-width="2.5"/></g><g><path d="M 16 40 Q 9 52 16 58 Q 23 52 16 40 Z" fill="#7fd3ff" stroke="#1d1330" stroke-width="2.5"/></g></g>
+          <g data-sym="crazy"><g><path d="M 104 26 a 2 2 0 1 1 4 0 a 5 5 0 1 1 -10 0 a 8 8 0 1 1 16 0" fill="none" stroke="#7b3fa0" stroke-width="3" stroke-linecap="round"/></g><g><path d="M 16 26 a 2 2 0 1 1 4 0 a 5 5 0 1 1 -10 0 a 8 8 0 1 1 16 0" fill="none" stroke="#7b3fa0" stroke-width="3" stroke-linecap="round"/></g></g>
+        </svg>
+        <div class="bubble" id="avBubble">Я так вижу!</div>
+      </div>
+      <div class="order-paper">
+        <div class="order-org">АО «Отдел Отделов»<br>Кабинет руководства (вход по записи)</div>
+        <div class="order-title" id="orderTitle">ПРИКАЗ №1</div>
+        <div class="order-date" id="orderDate"></div>
+        <p class="order-text" id="orderText"></p>
+        <div class="order-meta" id="orderMeta"></div>
+        <div class="order-sign">Руководитель: <span class="scribble">Бабуш~</span></div>
+        <div class="stamp" id="stamp">УТВЕРЖДЕНО</div>
+      </div>
+      <div class="quip hidden" id="quip"></div>
+    </div>
+    <div class="react-row" id="reactRow">
+      <button class="r-btn r-ok" data-r="0"><span>😐</span>Смириться</button>
+      <button class="r-btn r-ign" data-r="1"><span>🙈</span>Игнорировать</button>
+      <button class="r-btn r-cry" data-r="2"><span>😭</span>Заплакать</button>
+    </div>
+    <div class="btn-row hidden" id="nextRow"><button class="big-btn" id="nextBtn">Принять последствия</button></div>
+  </div>
+</div>
+
+<!-- Диагноз -->
+<div class="overlay hidden" id="debuffOv">
+  <div class="card" role="dialog" aria-label="Новый диагноз">
+    <div class="card-scroll">
+      <div class="med-head"><span class="cross">✚</span>МЕДИЦИНСКОЕ ЗАКЛЮЧЕНИЕ</div>
+      <div class="debuff-label">Руководству поставлен новый диагноз:</div>
+      <div class="debuff-name" id="dName"></div>
+      <p class="debuff-flavor" id="dFlavor"></p>
+      <div class="debuff-fx"><b>Побочный эффект:</b> <span id="dFx"></span></div>
+      <div class="debuff-count" id="dCount"></div>
+    </div>
+    <div class="btn-row"><button class="big-btn" id="dOk">Ну и ладно</button></div>
+  </div>
+</div>
+
+<!-- Финал -->
+<div class="overlay hidden" id="finalOv">
+  <div class="card final-card" role="dialog" aria-label="Итоги">
+    <div class="card-scroll">
+      <h2 class="final-title">ИТОГИ ЕЁ ПРАВЛЕНИЯ</h2>
+      <div class="stats" id="fStats"></div>
+      <h3>📜 Приказы эпохи</h3>
+      <ol class="order-list" id="fOrders"></ol>
+      <h3>🩺 Анамнез</h3>
+      <div class="chips" id="fDiag"></div>
+      <div class="medal"><div class="medal-label">Вам присвоен титул</div><div id="fTitle"></div></div>
+      <p class="final-phrase" id="fPhrase"></p>
+    </div>
+    <div class="btn-row"><button class="big-btn" id="restartBtn">Пережить новую эпоху</button></div>
+  </div>
+</div>
+
+<script>
+'use strict';
+/* ================= НАСТРОЙКИ ================= */
+const CONFIG = {
+  MAX_DEBUFFS: 10,   // сколько диагнозов до финала (не больше размера пула DEBUFFS, сейчас 20)
+  SPEED: 1,          // множитель скорости анимаций: 2 = вдвое быстрее, 0.5 = вдвое медленнее
+  DICE_MS: 1300,     // полёт кубиков
+  THINK_MS: 2600,    // фаза «мышления»
+  CAPTION_MS: 560    // смена подписей в статус-баре мышления
+};
+const dur = ms => ms / CONFIG.SPEED;
+
+/* ================= КОНТЕНТ ================= */
+const ORDERS = [
+  'Обеденный перерыв сокращается на 30 минут. Высвободившиеся 30 минут считать обедом.',
+  'Запретить употребление кофе в рабочее время. Бодрость сотрудникам надлежит вырабатывать самостоятельно, усилием воли.',
+  'Запретить печать на 3D-принтере. Принтер оставить на видном месте как напоминание о том, что могло бы быть.',
+  'Запретить зарядку мобильных телефонов на рабочем месте. Электричество компании предназначено не для личных нужд, а для гордости.',
+  'Ввести штраф за смех по понедельникам. Улыбка без зубов облагается по половинному тарифу.',
+  'Ввести обязательную утреннюю зарядку под «Подмосковные вечера». Темп медленный, с грустью в глазах.',
+  'Отменить пятницу. Впредь пятницу считать субботой, но с выходом на работу.',
+  'Все отчёты сдавать исключительно от руки, перьевой ручкой, без помарок. Помарки сдавать отдельным отчётом.',
+  'Запретить произносить слово «дедлайн». Использовать утверждённый термин «срок, который вы уже пропустили».',
+  'Переименовать переговорную в «Комнату раздумий». Разговаривать в ней запрещается.',
+  'Запретить яркую одежду. Допустимые цвета: серый, тёмно-серый и цвет настроения руководства.',
+  'Ежедневно отключать Wi-Fi в 12:00 для тишины. Тишину считать рабочим инструментом.',
+  'Все письма начинать словами «Доброго времени суток, многоуважаемая» и заканчивать словами «Простите за беспокойство».',
+  'Лифт использовать только для подъёма. Спуск осуществлять пешком, в целях воспитания смирения.',
+  'Ввести дресс-код для комнатных растений: фикусы в галстуках, кактусы без комментариев.',
+  'Совещание о сокращении совещаний проводить ежедневно в 9:00, 11:00, 14:00 и 17:30.',
+  'Запретить отъезжать на стуле с колёсиками дальше одного метра от стола. Колёса не повод для свободы.',
+  'Каждому сотруднику завести бумажный дневник настроения и сдавать его на подпись к 8:15.',
+  'Запретить использование кондиционера. Летом представлять себе зиму, зимой представлять себе Сочи.',
+  'Отпуск в июле и августе отменяется. Отпуск переносится на 31 февраля согласно графику.',
+  'Корпоративный праздник провести в субботу в 7:00 утра в формате инвентаризации.',
+  'Запретить печенье на рабочем месте. Крошки являются формой саботажа.',
+  'Вместо премии выдавать грамоту. Вместо грамоты устную благодарность. Вместо благодарности молчаливый кивок.',
+  'Все пароли записать на стикеры и приклеить на монитор руководителя для усиления информационной безопасности.',
+  'Установить единый корпоративный рингтон: звук закипающего чайника.',
+  'Запретить пользоваться калькулятором. Считать в уме или на счётах, выданных под роспись.',
+  'Шторы в офисе не открывать: солнце отвлекает от трудового подвига.',
+  'Обязать сотрудников здороваться с руководителем трижды в день: при входе, в обед и на всякий случай.',
+  'Запретить смайлики в рабочей переписке. Допускается одна скобка «)» по праздникам, согласованным заранее.',
+  'Выдавать скрепки по одной в неделю под роспись. Скрепку, утратившую форму, сдавать в бухгалтерию.',
+  'Все электронные документы распечатать, отсканировать и снова распечатать. Для надёжности.',
+  'Ввести должность «Ответственный за форточку». Остальным к форточке не приближаться ближе чем на два шага.',
+  'Запретить думать о выходных до 17:59 пятницы. Пятница при этом отменена, см. предыдущие приказы.',
+  'Рабочий день начинать с минуты молчания в память о принтере, сломавшемся в 2009 году.',
+  'Запретить носить наушники. Музыку слушать только из кабинета руководителя, через стену.',
+  'Обязать каждый отдел вырастить на подоконнике рассаду помидоров для укрепления командного духа.',
+  'Ввести обязательную подпись руководителя на каждом стикере. Неподписанные стикеры считать анонимками.',
+  'Запретить сидеть спиной к двери кабинета руководства. Лицом тоже запретить. Сидеть боком.',
+  'Перед уходом домой сдавать дежурному отчёт о том, почему вы уходите домой.',
+  'Запретить чайные пакетики повторного использования свыше трёх раз. Четвёртый раз только по служебной записке.',
+  'Перевести все часы в офисе на 15 минут вперёд. Опоздания считать по старым часам.',
+  'Ввести дежурного по тишине. Дежурный обязан громко напоминать о тишине каждые 10 минут.',
+  'Обращаться друг к другу исключительно по имени-отчеству. Принтер называть Василием Петровичем.',
+  'Запретить ставить чашки на стол без подстаканника. Подстаканники выдаются в 1986 году.',
+  'Перенести кулер с водой на последний этаж. Жажда закаляет характер и икроножные мышцы.',
+  'Каждую среду считать днём открытых дверей. Двери не закрывать, даже в туалете.',
+  'Запретить вздыхать на рабочем месте. Глубокие вдохи допускаются после 18:00 по заявлению.',
+  'Всем сотрудникам выучить наизусть устав компании и сдать зачёт в форме частушек.',
+  'Ввести единую корпоративную причёску. Образец висит в кабинете руководства, см. портрет.',
+  'Заменить все стулья табуретками. Спинка расслабляет, а расслабление не входит в должностные обязанности.',
+  'Каждую пятницу проводить конкурс «Лучший отчёт недели». Победитель пишет отчёт о конкурсе.',
+  'Запретить открывать более двух вкладок в браузере. Третья вкладка является признаком безделья.',
+  'Для экономии бумаги печатать документы с двух сторон, а также на полях и на обороте конверта.',
+  'Отпуск согласовывать за 14 месяцев. Тех, кто не успел, поздравляем с продолжением работы.',
+  'Именинникам приносить торт за свой счёт. Свечи задувать по очереди, начиная с руководителя.',
+  'Все совещания проводить стоя. Руководитель проводит совещания сидя, в знак особой ответственности.'
+];
+const DEBUFFS = [
+  ['Деменция', 'Каждый приказ теперь издаётся как впервые. Включая те, что уже издавались.'],
+  ['Болезнь Альцгеймера', 'Бабушка забыла, как вас зовут. Но помнит, что вы опоздали в 2014-м.'],
+  ['Склероз', 'Записывает приказы на стикерах, стикеры теряет. Потерянный приказ считается секретным и действует вдвойне.'],
+  ['Катаракта', 'Видит мир в тумане. Особенно ваши заслуги.'],
+  ['Тугоухость', 'Не слышит возражений. Впрочем, и раньше не слышала, но теперь есть справка.'],
+  ['Ревматизм', 'Чувствует перемену погоды и меняет политику компании вслед за ней.'],
+  ['Мигрень', 'Теперь приказы издаются со звуком, который слышно даже в отпуске.'],
+  ['Паранойя', 'Уверена, что принтер работает на конкурентов. Принтер не отрицает.'],
+  ['Бессонница', 'Не спит до трёх ночи и пишет вам «Зайдите ко мне». В три ночи.'],
+  ['Аритмия', 'Сердце бьётся в ритме планёрок: часто, бессмысленно и без перерыва.'],
+  ['Хроническая ностальгия', 'Любое предложение сравнивается с 1986 годом и проигрывает.'],
+  ['Синдром «Я сама»', 'Ничего не делегирует, но всё перепроверяет. Дважды. Ночью.'],
+  ['Офисная подагра', 'Ноги не ходят на совещания, поэтому совещания ходят к ней. Всем отделом.'],
+  ['Острая канцелярия', 'Говорит исключительно канцеляритом. Даже «доброе утро» оформляется служебной запиской.'],
+  ['Хронический радикулит', 'Не может разогнуться, поэтому все решения принимает с наклоном. Резким и влево.'],
+  ['Дальнозоркость', 'Отлично видит ошибки в отчётах соседнего отдела. Свои на расстоянии вытянутой руки не видит.'],
+  ['Синдром «Раньше было лучше»', 'Любое нововведение отправляется туда, где было лучше. То есть в архив.'],
+  ['Повышенное давление', 'Давление скачет. Вместе с ним скачут сроки, премии и график отпусков.'],
+  ['Вербальное недержание', 'Планёрка на 5 минут длится два часа. Из них полтора про рассаду.'],
+  ['Селективная амнезия', 'Забывает обещанные премии. Помнит, кто в 2017-м взял её ручку.']
+];
+const STAGE_FX = [
+  'мозг начал зеленеть, на лице прибавилось морщин.',
+  'треснули очки. Видимость сохранилась, как и раньше, частично.',
+  'пучок растрепался и зажил своей жизнью.',
+  'из уха выросла слуховая трубка. Слышно всё равно только себя.',
+  'прилетела муха. Оформлена в штат.',
+  'в извилинах завелась паутина, под глазами мешки.',
+  'очки окончательно перекосило.',
+  'появились пластырь и бородавка. Откуда, никто не спрашивает.',
+  'из головы повалил пар. И вопросы.',
+  'мозг усох до размеров служебной записки. Прилетела вторая муха.'
+];
+const CAPTIONS = [
+  'Ищу логику… не найдено', 'Сверяюсь с гороскопом', 'Вспоминаю, как в 1986-м', 'Думаю о внуках… ой, не о том',
+  'Считаю до трёх. Не получилось', 'Советуюсь с фикусом', 'Звоню подруге Зинаиде', 'Ищу очки… они на лбу',
+  'Проверяю, выключен ли утюг', 'Листаю сонник', 'Загружаю здравый смысл… ошибка 404', 'Вспоминаю пароль от почты'
+];
+const QUIPS = [
+  ['Вы смирились. Полегчало? Не полегчало.', 'Смирение засчитано. Премия не засчитана.', 'Вы кивнули так искренне, что приказ продублировали.', 'Вы смирились. В трудовую книжку добавлено слово «удобный».'],
+  ['Вы игнорируете приказ. Приказ игнорирует вас обратно.', 'Вы сделали вид, что не видели. Приказ сделал вид, что не обиделся.', 'Игнорирование зафиксировано в журнале игнорирования.', 'Вы проигнорировали. Бабушка проигнорировала ваше игнорирование.'],
+  ['Вы заплакали. Бабушка довольна.', 'Слёзы приняты в бухгалтерию как переработка. Без оплаты.', 'Вы плачете. Вам выдана салфетка. Под роспись.', 'Ваши слёзы утверждены и приобщены к приказу.']
+];
+const NOTE = ['На ход событий это не повлияло.', 'Влияние на итог: 0,00%.', 'Ваш выбор учтён и проигнорирован.', 'Система благодарит вас за бесполезный выбор.'];
+const DAYS = ['32 сентября', '31 февраля', '0 января', '30 февраля', '41 мая', '35 декабря', '45 мартобря', '−3 марта', '77 октября', '13 пятницы', '31 июня', 'позавчера послезавтра', '8 восьмибря', '1 апреля (всерьёз)'];
+const YEARS = ['1986 г.', '1972 г.', '2007 г.', 'текущего г.', 'прошлого будущего г.', '19… г. (не помню)', '1999½ г.'];
+const REASONS = ['гороскоп на неделю', 'сон про 1986 год', 'совет подруги Зинаиды', 'интуиция', 'фикус кивнул', 'передача про здоровье', 'так было всегда', 'потому что'];
+const BUBBLES = ['Я так вижу!', 'Не обсуждается!', 'Это для вашего же блага!', 'Подписано!', 'Вопросы есть? Вопросов нет.', 'Раньше и не такое терпели!', 'Мне виднее!', 'Исполнять с энтузиазмом!'];
+const TITLES = ['Заслуженный терпила компании', 'Мастер смирения', 'Плакальщик 1-й категории', 'Почётный игнорщик', 'Кавалер ордена «Подмосковных вечеров»',
+  'Старший специалист по кивкам', 'Ветеран планёрок', 'Хранитель последней скрепки', 'Народный страдалец отдела', 'Гроссмейстер служебных записок'];
+const PHRASES = ['Эпоха закончилась. Приказы остались. Навсегда.', 'Бабушка уходит на заслуженный отдых. Завтра выйдет снова.',
+  'Все приказы отменены, кроме последнего: «Ничего не отменять».', 'Компания выстояла. Вы, в общем-то, тоже. Формально.',
+  'Мозг заполнен на 100%. Свободное место выделено под новые идеи руководства.', 'Ваши реакции сохранены в архиве. Архив сожжён в целях экономии места.'];
+const HINTS = ['Кубики ни на что не влияют. Как и вы.', 'Совет: не спорьте. Бесполезно, но бодрит.', 'Мозг заполняется. Приказы тоже.',
+  'Помните: инициатива наказуема. Бросок кубиков тоже инициатива.', 'Говорят, где-то есть отдел, где всё логично. Это слухи.', 'Держитесь. Это не поможет, но держитесь.'];
+const EMOTIONS = ['angry', 'smug', 'shocked', 'crazy'];
+
+/* ================= УТИЛИТЫ ================= */
+const $ = s => document.querySelector(s);
+const NS = 'http://www.w3.org/2000/svg';
+function svgEl(tag, attrs, parent) { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; }
+const rnd = (a, b) => a + Math.random() * (b - a);
+const ri = (a, b) => Math.floor(rnd(a, b + 1));
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+function shuffle(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+const wait = ms => new Promise(r => setTimeout(r, ms));
+const lerp = (a, b, t) => a + (b - a) * t;
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const easeOutCubic = t => 1 - Math.pow(1 - t, 3);
+const easeOutBack = t => { const c = 1.7; return 1 + (c + 1) * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2); };
+function hex2rgb(h) { const n = parseInt(h.slice(1), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; }
+function mix(h1, h2, t) { const a = hex2rgb(h1), b = hex2rgb(h2); return 'rgb(' + a.map((v, i) => Math.round(lerp(v, b[i], t))).join(',') + ')'; }
+function seeded(seed) { return function () { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const f1 = v => v.toFixed(1);
+function smoothPath(pts, closed) {
+  const n = pts.length; let d = 'M' + f1(pts[0][0]) + ' ' + f1(pts[0][1]);
+  const get = i => closed ? pts[(i + n) % n] : pts[clamp(i, 0, n - 1)];
+  const last = closed ? n : n - 1;
+  for (let i = 0; i < last; i++) {
+    const p0 = get(i - 1), p1 = get(i), p2 = get(i + 1), p3 = get(i + 2);
+    const c1 = [p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6];
+    const c2 = [p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6];
+    d += ' C' + [c1, c2, p2].map(p => f1(p[0]) + ' ' + f1(p[1])).join(' ');
+  }
+  return d + (closed ? ' Z' : '');
+}
+
+/* ================= ЗВУК (Web Audio) ================= */
+const Sound = {
+  ctx: null, master: null, noiseBuf: null, muted: false,
+  init() {
+    try {
+      if (!this.ctx) {
+        const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+        this.ctx = new AC();
+        this.master = this.ctx.createGain(); this.master.gain.value = this.muted ? 0 : 0.55; this.master.connect(this.ctx.destination);
+        const len = this.ctx.sampleRate; this.noiseBuf = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
+        const ch = this.noiseBuf.getChannelData(0); for (let i = 0; i < len; i++) ch[i] = Math.random() * 2 - 1;
+      }
+      if (this.ctx.state === 'suspended') this.ctx.resume();
+    } catch (e) { this.ctx = null; }
+  },
+  ok() { return !!this.ctx && !this.muted; },
+  setMuted(m) { this.muted = m; if (this.master) this.master.gain.setTargetAtTime(m ? 0 : 0.55, this.ctx.currentTime, 0.02); },
+  tone(f, d, o = {}) {
+    if (!this.ok()) return;
+    const c = this.ctx, t = c.currentTime + (o.delay || 0), vol = o.vol || 0.3;
+    const osc = c.createOscillator(), g = c.createGain();
+    osc.type = o.type || 'sine'; osc.frequency.setValueAtTime(f, t);
+    if (o.to) osc.frequency.exponentialRampToValueAtTime(o.to, t + d);
+    if (o.vib) { const l = c.createOscillator(), lg = c.createGain(); l.frequency.value = o.vib; lg.gain.value = f * 0.03; l.connect(lg); lg.connect(osc.frequency); l.start(t); l.stop(t + d + 0.05); }
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + (o.attack || 0.005)); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+    osc.connect(g); g.connect(this.master); osc.start(t); osc.stop(t + d + 0.05);
+  },
+  hiss(d, o = {}) {
+    if (!this.ok()) return;
+    const c = this.ctx, t = c.currentTime + (o.delay || 0);
+    const src = c.createBufferSource(); src.buffer = this.noiseBuf;
+    const flt = c.createBiquadFilter(); flt.type = o.type || 'bandpass'; flt.frequency.setValueAtTime(o.freq || 2000, t); flt.Q.value = o.q || 1;
+    if (o.to) flt.frequency.exponentialRampToValueAtTime(o.to, t + d);
+    const g = c.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(o.vol || 0.3, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+    src.connect(flt); flt.connect(g); g.connect(this.master); src.start(t, Math.random() * 0.5); src.stop(t + d + 0.05);
+  },
+  clack() { for (let i = 0; i < 3; i++) { const delay = i * 0.06 + rnd(0, 0.03); this.hiss(0.05, { vol: 0.5, freq: rnd(2500, 4200), q: 5, delay }); this.tone(rnd(900, 1400), 0.04, { type: 'square', vol: 0.06, delay }); } },
+  whoosh() { this.hiss(0.5, { vol: 0.22, freq: 400, to: 2600, q: 1.4 }); },
+  bonk() { this.tone(440, 0.18, { type: 'triangle', vol: 0.35, to: 140 }); this.clack(); },
+  thud() { this.tone(160, 0.28, { vol: 0.6, to: 48 }); this.hiss(0.14, { vol: 0.4, freq: 700, type: 'lowpass' }); this.clack(); },
+  bzyn() { const f = rnd(700, 1500); this.tone(f, 0.26, { vol: 0.14, to: f * 1.6, vib: 30 }); this.tone(f * 2.01, 0.16, { type: 'triangle', vol: 0.05 }); },
+  stamp() { this.tone(130, 0.32, { vol: 0.8, to: 40 }); this.hiss(0.16, { vol: 0.6, freq: 900, type: 'lowpass' }); this.tone(70, 0.2, { type: 'square', vol: 0.1, to: 35 }); },
+  click() { this.tone(660, 0.07, { type: 'square', vol: 0.07, to: 880 }); },
+  reaction(r) {
+    if (r === 0) this.tone(330, 0.5, { type: 'triangle', vol: 0.2, to: 200 });
+    else if (r === 1) { this.tone(880, 0.08, { type: 'square', vol: 0.06 }); this.tone(660, 0.08, { type: 'square', vol: 0.06, delay: 0.1 }); }
+    else this.tone(640, 0.8, { type: 'sine', vol: 0.18, to: 380, vib: 9 });
+  },
+  sad() { [392, 370, 349, 330].forEach((n, i) => this.tone(n, i === 3 ? 0.9 : 0.3, { type: 'sawtooth', vol: 0.09, delay: i * 0.3, vib: i === 3 ? 6 : 0 })); },
+  poof() { this.hiss(0.5, { vol: 0.35, freq: 500, to: 90, type: 'lowpass' }); this.tone(220, 0.4, { type: 'triangle', vol: 0.15, to: 80 }); },
+  fanfare() { [523, 659, 784, 1046, 1000].forEach((n, i) => this.tone(n, i === 4 ? 1.0 : 0.2, { type: 'square', vol: 0.07, delay: i * 0.17, vib: i === 4 ? 7 : 0 })); }
+};
+
+/* ================= СЦЕНА ================= */
+const el = {
+  scene: $('#scene'), headWrap: $('#headWrap'), rays: $('#rays'), medCircle: $('#medCircle'), fx: $('#fx'),
+  brainGroup: $('#brainGroup'), brainBase: $('#brainBase'), gyri: $('#gyri'), gyriHi: $('#gyriHi'), sulci: $('#sulci'),
+  cereb: $('#cereb'), cerebLines: $('#cerebLines'), stem: $('#stem'),
+  neurons: $('#neurons'), synapses: $('#synapses'), diceLayer: $('#diceLayer'), diceTrails: $('#diceTrails'),
+  eye: $('#eye'), eyeWhite: $('#eyeWhite'), pupil: $('#pupil'), pupilHi: $('#pupilHi'), lid: $('#lid'), brow: $('#brow'), mouth: $('#mouth'),
+  glasses: $('#glasses'), bun: $('#bun'), blush: $('#blush'),
+  mini: $('#mini'), avPL: $('#avPL'), avPR: $('#avPR'), avBrowL: $('#avBrowL'), avBrowR: $('#avBrowR'), avMouth: $('#avMouth')
+};
+const BRAIN = { cx: 190, cy: 150, rx: 92, ry: 58 };
+let brainScaleBase = 1;
+const neuronList = [];
+const synList = [];
+
+function buildScene() {
+  // лучи медальона
+  const N = 18;
+  for (let i = 0; i < N; i++) {
+    const a0 = i / N * Math.PI * 2, a1 = (i + 0.5) / N * Math.PI * 2;
+    svgEl('polygon', { points: `0,0 ${f1(Math.cos(a0) * 300)},${f1(Math.sin(a0) * 300)} ${f1(Math.cos(a1) * 300)},${f1(Math.sin(a1) * 300)}`, fill: 'url(#hatch)', opacity: '.9' }, el.rays);
+  }
+  // кудри вдоль волос
+  const hp = $('#hairPath2'), L = hp.getTotalLength(), curls = $('#curls');
+  for (let i = 1; i < 13; i++) {
+    const p = hp.getPointAtLength(L * i / 13);
+    const cr = i % 2 ? 15 : 12;
+    svgEl('circle', { cx: f1(p.x), cy: f1(p.y), r: cr, fill: '#d6cef5', stroke: '#1d1330', 'stroke-width': 3 }, curls);
+    svgEl('path', { d: `M ${f1(p.x - 5)} ${f1(p.y)} a 5 5 0 1 1 5 5 a 8 8 0 0 1 -8 -8`, fill: 'none', stroke: '#9d92cf', 'stroke-width': 2.5, 'stroke-linecap': 'round' }, curls);
+  }
+  // карандашный «перештрих» контуров — эффект рисунка от руки
+  document.querySelectorAll('#scene .sk').forEach(e => {
+    const c = e.cloneNode(false); c.removeAttribute('id'); c.removeAttribute('class');
+    c.setAttribute('fill', 'none'); c.setAttribute('stroke-width', '1.8'); c.setAttribute('opacity', '.5');
+    c.setAttribute('transform', 'translate(2.5 -2) ' + (e.getAttribute('transform') || ''));
+    e.after(c);
+  });
+  // мозг
+  const R = seeded(1986), { cx, cy, rx, ry } = BRAIN, pts = [];
+  for (let i = 0; i < 44; i++) {
+    const t = i / 44 * Math.PI * 2, b = 1 + (i % 2 ? 0.045 : -0.005) + (R() - 0.5) * 0.03;
+    const sy = Math.sin(t) > 0 ? 0.9 : 1;
+    pts.push([cx + Math.cos(t) * rx * b, cy + Math.sin(t) * ry * b * sy]);
+  }
+  const outline = smoothPath(pts, true);
+  el.brainBase.setAttribute('d', outline); $('#brainClipPath').setAttribute('d', outline);
+  let g = '', gh = '';
+  for (let row = 0; row < 8; row++) {
+    const y0 = cy - 50 + row * 14; let seg = [];
+    const flush = () => { if (seg.length > 2) { g += smoothPath(seg, false) + ' '; gh += smoothPath(seg.map(p => [p[0] - 1.5, p[1] - 2.5]), false) + ' '; } seg = []; };
+    for (let x = cx - rx - 6; x <= cx + rx + 6; x += 8) {
+      seg.push([x + (R() - 0.5) * 3, y0 + Math.sin(x * 0.17 + row * 1.9) * 6 + (R() - 0.5) * 4]);
+      if (seg.length > 4 && R() < 0.22) { flush(); x += 6; }
+    }
+    flush();
+  }
+  for (let col = 0; col < 7; col++) {
+    const x0 = cx - 75 + col * 25 + (R() - 0.5) * 8, y0 = cy - 40 + R() * 40, seg = [];
+    for (let k = 0; k < 4; k++) seg.push([x0 + Math.sin(k * 1.7 + col) * 6, y0 + k * 8]);
+    g += smoothPath(seg, false) + ' ';
+  }
+  el.gyri.setAttribute('d', g); el.gyriHi.setAttribute('d', gh);
+  el.sulci.setAttribute('d', `M 205 92 C 196 112 214 130 200 150 C 192 162 200 172 196 186 M 262 178 C 236 168 214 172 188 160 C 172 152 160 158 150 150`);
+  // нейроны
+  for (let i = 0; i < 24; i++) {
+    const a = R() * Math.PI * 2, r = Math.sqrt(R());
+    const x = cx + Math.cos(a) * rx * 0.8 * r, y = cy + Math.sin(a) * ry * 0.72 * r;
+    const c = svgEl('circle', { cx: f1(x), cy: f1(y), r: 3, fill: 'url(#gGlow)', opacity: 0 }, el.neurons);
+    neuronList.push({ x, y, c, v: 0 });
+  }
+  for (let i = 0; i < 7; i++) {
+    const l = svgEl('line', { stroke: '#fff35c', 'stroke-width': 3, 'stroke-linecap': 'round', opacity: 0, 'stroke-dasharray': '6 5' }, el.synapses);
+    synList.push({ l, v: 0 });
+  }
+}
+
+/* Эмоции */
+const EMO = {
+  neutral: { brow: '', mouth: 'M 316 314 Q 324 317 333 313', fill: 'none', pr: 7, rx: 16, ry: 14, lid: false },
+  thinking: { brow: 'translate(0 -5)', mouth: 'M 317 315 L 333 314', fill: 'none', pr: 6, rx: 16, ry: 15, lid: false },
+  angry: { brow: 'rotate(16 300 168)', mouth: 'M 315 318 Q 324 309 334 316', fill: 'none', pr: 6, rx: 16, ry: 11, lid: false },
+  smug: { brow: 'rotate(-10 300 168)', mouth: 'M 314 312 Q 323 322 334 309', fill: 'none', pr: 7, rx: 16, ry: 14, lid: true },
+  shocked: { brow: 'translate(0 -10)', mouth: 'M 318 313 Q 326 302 334 312 Q 327 328 318 313 Z', fill: '#5a1020', pr: 4, rx: 21, ry: 20, lid: false },
+  crazy: { brow: 'rotate(-16 300 168)', mouth: 'M 314 315 L 319 310 L 324 317 L 329 310 L 334 315', fill: 'none', pr: 9, rx: 18, ry: 17, lid: false }
+};
+const MINI = {
+  neutral: { bl: '', br: '', pl: 5, pr: 5, m: 'M 54 108 Q 60 110 66 107', fill: 'none' },
+  angry: { bl: 'rotate(22 44 46)', br: 'rotate(-22 76 46)', pl: 5, pr: 5, m: 'M 53 110 Q 60 103 67 110', fill: 'none' },
+  smug: { bl: 'rotate(-10 44 46)', br: 'rotate(10 76 46)', pl: 5, pr: 5, m: 'M 52 106 Q 60 113 68 104', fill: 'none' },
+  shocked: { bl: 'translate(0 -7)', br: 'translate(0 -7)', pl: 3, pr: 3, m: 'M 55 107 Q 60 99 65 107 Q 60 116 55 107 Z', fill: '#5a1020' },
+  crazy: { bl: 'rotate(-18 44 46)', br: 'translate(0 -5) rotate(-10 76 46)', pl: 8, pr: 2.5, m: 'M 51 108 L 55 104 L 59 109 L 63 104 L 67 109 L 69 106', fill: 'none' }
+};
+let currentEmo = 'neutral';
+function setEmotion(name) {
+  currentEmo = name; const e = EMO[name];
+  el.scene.setAttribute('data-emo', name);
+  if (e.brow) el.brow.setAttribute('transform', e.brow); else el.brow.removeAttribute('transform');
+  el.mouth.setAttribute('d', e.mouth); el.mouth.setAttribute('fill', e.fill);
+  el.pupil.setAttribute('r', e.pr); el.eyeWhite.setAttribute('rx', e.rx); el.eyeWhite.setAttribute('ry', e.ry);
+  el.lid.style.display = e.lid ? '' : 'none';
+  const m = MINI[name] || MINI.neutral;
+  el.mini.setAttribute('data-emo', MINI[name] ? name : 'neutral');
+  el.avBrowL.setAttribute('transform', m.bl); el.avBrowR.setAttribute('transform', m.br);
+  el.avPL.setAttribute('r', m.pl); el.avPR.setAttribute('r', m.pr);
+  el.avMouth.setAttribute('d', m.m); el.avMouth.setAttribute('fill', m.fill);
+}
+
+/* Стадии деградации */
+let stage = 0;
+function applyStage(n, animate) {
+  stage = n; const k = n / 10;
+  el.brainBase.setAttribute('fill', mix('#ff9fc6', '#7f8f3c', k));
+  el.cereb.setAttribute('fill', mix('#f48fb8', '#6f7d33', k));
+  el.stem.setAttribute('fill', mix('#e889ad', '#6a7430', k));
+  el.gyri.setAttribute('stroke', mix('#c2457a', '#3f4a18', k));
+  el.cerebLines.setAttribute('stroke', mix('#c2457a', '#3f4a18', k));
+  el.medCircle.setAttribute('fill', mix('#f3dfb0', '#b5ad78', k));
+  el.blush.setAttribute('opacity', (0.5 * (1 - k * 0.8)).toFixed(2));
+  document.querySelectorAll('#scene [data-st]').forEach(e => { e.style.display = n >= +e.getAttribute('data-st') ? '' : 'none'; });
+  if (n >= 7) el.glasses.setAttribute('transform', 'rotate(9 166 226)'); else el.glasses.removeAttribute('transform');
+  if (n >= 3) el.bun.setAttribute('transform', 'rotate(16 96 50) translate(4 -4)'); else el.bun.removeAttribute('transform');
+  brainScaleBase = n >= 10 ? 0.84 : 1 - n * 0.008;
+  Fly.flies[0].g.style.display = n >= 5 ? '' : 'none';
+  Fly.flies[1].g.style.display = n >= 10 ? '' : 'none';
+  if (animate) {
+    Sound.poof(); poof(190, 150, 14); burst(200, 60, 'ДЕГРАДАЦИЯ!', '#9bc53d', 1.15); shake = 7;
+  }
+}
+
+/* ================= ЭФФЕКТЫ ================= */
+const particles = [];
+function addParticle(elm, life, fn) { particles.push({ el: elm, t: 0, life, fn }); }
+function updateParticles(dt) {
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i]; p.t += dt; const k = Math.min(1, p.t / p.life);
+    p.fn(k, p);
+    if (k >= 1) { p.el.remove(); particles.splice(i, 1); }
+  }
+}
+function burst(x, y, text, color = '#ffe14d', size = 1) {
+  const g = svgEl('g', {}, el.fx);
+  let pts = []; const n = 14;
+  const w = 20 + text.length * 7.5;
+  for (let i = 0; i < n * 2; i++) { const a = i / (n * 2) * Math.PI * 2, r = i % 2 ? 0.72 : 1; pts.push(f1(Math.cos(a) * w * r) + ',' + f1(Math.sin(a) * 30 * r)); }
+  svgEl('polygon', { points: pts.join(' '), fill: color, stroke: '#1d1330', 'stroke-width': 3.5, 'stroke-linejoin': 'round' }, g);
+  const t = svgEl('text', { x: 0, y: 6, 'text-anchor': 'middle', 'font-size': 17, 'font-weight': 900, fill: '#e63946', stroke: '#1d1330', 'stroke-width': 1.2, 'font-family': 'Impact,"Arial Black",sans-serif', 'letter-spacing': 1 }, g);
+  t.textContent = text;
+  const rot = rnd(-12, 12);
+  addParticle(g, dur(800), k => {
+    const s = (k < 0.2 ? easeOutBack(k / 0.2) : 1) * size;
+    g.setAttribute('transform', `translate(${x} ${y - k * 12}) rotate(${rot}) scale(${s.toFixed(3)})`);
+    g.setAttribute('opacity', k > 0.7 ? ((1 - k) / 0.3).toFixed(2) : 1);
+  });
+}
+function poof(x, y, n) {
+  for (let i = 0; i < n; i++) {
+    const c = svgEl('circle', { cx: 0, cy: 0, r: 8, fill: '#e8e3f5', stroke: '#1d1330', 'stroke-width': 2.5 }, el.fx);
+    const a = rnd(0, Math.PI * 2), d = rnd(50, 110), r0 = rnd(6, 14);
+    addParticle(c, dur(rnd(600, 900)), k => {
+      const e = easeOutCubic(k);
+      c.setAttribute('transform', `translate(${f1(x + Math.cos(a) * d * e)} ${f1(y + Math.sin(a) * d * e)})`);
+      c.setAttribute('r', f1(r0 * (1 + k)));
+      c.setAttribute('opacity', (1 - k).toFixed(2));
+    });
+  }
+}
+function smokePuff() {
+  const x = rnd(150, 230), c = svgEl('circle', { cx: 0, cy: 0, r: 6, fill: '#bfc2b0', stroke: '#1d1330', 'stroke-width': 2 }, el.fx);
+  const drift = rnd(-30, 30);
+  addParticle(c, dur(2200), k => {
+    c.setAttribute('transform', `translate(${f1(x + drift * k + Math.sin(k * 9) * 6)} ${f1(70 - k * 80)})`);
+    c.setAttribute('r', f1(6 + k * 16)); c.setAttribute('opacity', (0.85 * (1 - k)).toFixed(2));
+  });
+}
+function questionMark() {
+  const x = rnd(110, 290), t = svgEl('text', { 'text-anchor': 'middle', 'font-size': 26, 'font-weight': 900, fill: '#ffffff', stroke: '#1d1330', 'stroke-width': 2, 'font-family': 'Impact,"Arial Black",sans-serif' }, el.fx);
+  t.textContent = pick(['?', '??', '?!']);
+  addParticle(t, dur(2000), k => {
+    t.setAttribute('transform', `translate(${f1(x + Math.sin(k * 7) * 10)} ${f1(80 - k * 70)}) rotate(${f1(Math.sin(k * 5) * 20)})`);
+    t.setAttribute('opacity', (k < 0.2 ? k / 0.2 : 1 - (k - 0.2) / 0.8).toFixed(2));
+  });
+}
+
+/* Мухи */
+const Fly = {
+  flies: [],
+  init() {
+    for (let i = 0; i < 2; i++) {
+      const g = svgEl('g', { style: 'display:none' }, el.fx);
+      const w1 = svgEl('ellipse', { cx: -3, cy: -7, rx: 5, ry: 9, fill: '#e8f6ff', stroke: '#1d1330', 'stroke-width': 2, opacity: '.9' }, g);
+      const w2 = svgEl('ellipse', { cx: 4, cy: -7, rx: 5, ry: 9, fill: '#e8f6ff', stroke: '#1d1330', 'stroke-width': 2, opacity: '.9' }, g);
+      svgEl('ellipse', { cx: 0, cy: 0, rx: 8, ry: 6, fill: '#1d1330' }, g);
+      svgEl('circle', { cx: 7, cy: -2, r: 3, fill: '#e63946' }, g);
+      this.flies.push({ g, w1, w2, ph: i * 2.4, px: 0 });
+    }
+  },
+  update(t) {
+    this.flies.forEach((f, i) => {
+      if (f.g.style.display === 'none') return;
+      const tt = t * (i ? 1.25 : 1) + f.ph;
+      const x = 200 + 172 * Math.cos(tt * 1.1) + 8 * Math.sin(tt * 13);
+      const y = 180 + 125 * Math.sin(tt * 1.6) + 6 * Math.cos(tt * 17);
+      const dir = x >= f.px ? 1 : -1; f.px = x;
+      const flap = 0.35 + 0.65 * Math.abs(Math.sin(t * 55 + i));
+      f.w1.setAttribute('ry', f1(9 * flap)); f.w2.setAttribute('ry', f1(9 * flap));
+      f.g.setAttribute('transform', `translate(${f1(x)} ${f1(y)}) scale(${dir} 1)`);
+    });
+  }
+};
+
+/* ================= КУБИКИ ================= */
+const PIP_POS = [[-9, -9], [9, -9], [-9, 0], [0, 0], [9, 0], [-9, 9], [9, 9]];
+const PIPS = { 1: [3], 2: [0, 6], 3: [0, 3, 6], 4: [0, 1, 5, 6], 5: [0, 1, 3, 5, 6], 6: [0, 1, 2, 4, 5, 6] };
+const Dice = {
+  dice: [], active: false, stuck: false, t0: 0, D: 1300, resolve: null, landedCount: 0,
+  init() {
+    ['#e63946', '#1d1330'].forEach(pipColor => {
+      const trail = svgEl('g', { stroke: '#1d1330', 'stroke-width': 3, 'stroke-linecap': 'round', opacity: '.75' }, el.diceTrails);
+      const lines = [0, 1, 2].map(() => svgEl('line', {}, trail));
+      const crack = svgEl('path', { fill: 'none', stroke: '#1d1330', 'stroke-width': 3, 'stroke-linecap': 'round', style: 'display:none' }, el.diceLayer);
+      const g = svgEl('g', { style: 'display:none' }, el.diceLayer);
+      svgEl('rect', { x: -14, y: -13, width: 34, height: 34, rx: 7, fill: '#9a8fb8', stroke: '#1d1330', 'stroke-width': 3 }, g);
+      svgEl('rect', { x: -17, y: -17, width: 34, height: 34, rx: 7, fill: '#ffffff', stroke: '#1d1330', 'stroke-width': 4 }, g);
+      const pips = PIP_POS.map(p => svgEl('circle', { cx: p[0], cy: p[1], r: 3.7, fill: pipColor }, g));
+      this.dice.push({ g, pips, trail, lines, crack });
+    });
+  },
+  setFace(d, v) { d.pips.forEach((c, i) => { c.style.display = PIPS[v].includes(i) ? '' : 'none'; }); },
+  throw(a, b) {
+    return new Promise(res => {
+      this.resolve = res; this.D = dur(CONFIG.DICE_MS); this.landedCount = 0; this.stuck = false;
+      const cfg = [
+        { P0: [rnd(40, 110), 470], P1: [138 + rnd(-6, 6), 100], P2: [172, 146], val: a, delay: 0 },
+        { P0: [rnd(290, 360), 480], P1: [244 + rnd(-6, 6), 100], P2: [214, 158], val: b, delay: dur(110) }
+      ];
+      this.dice.forEach((d, i) => {
+        Object.assign(d, cfg[i]);
+        d.spin = (i ? -1 : 1) * rnd(900, 1260); d.endRot = rnd(-28, 28); d.r0 = d.endRot - d.spin;
+        d.bounced = false; d.landed = false; d.prev = null; d.lastFace = 0; d.landT = 0;
+        d.g.style.display = ''; d.trail.style.display = ''; d.crack.style.display = 'none';
+        d.g.setAttribute('opacity', 1);
+        d.g.setAttribute('transform', `translate(${d.P0[0]} ${d.P0[1]})`);
+        this.setFace(d, ri(1, 6));
+      });
+      Sound.whoosh();
+      this.t0 = performance.now(); this.active = true;
+    });
+  },
+  update(now) {
+    if (this.active) {
+      const SPLIT = 0.55;
+      this.dice.forEach(d => {
+        if (d.landed) {
+          const k = clamp((now - d.landT) / 220, 0, 1), sq = 1 - 0.28 * Math.sin(Math.PI * k);
+          d.g.setAttribute('transform', `translate(${d.P2[0]} ${d.P2[1] + 3 * Math.sin(Math.PI * k)}) rotate(${f1(d.endRot)}) scale(${f1(0.95 / sq * 1)} ${(0.95 * sq).toFixed(3)})`);
+          return;
+        }
+        const p = clamp((now - this.t0 - d.delay) / (this.D - d.delay), 0, 1);
+        let x, y, sc;
+        if (p < SPLIT) {
+          const u = p / SPLIT, C = [(d.P0[0] + d.P1[0]) / 2, d.P1[1] - 95];
+          x = (1 - u) * (1 - u) * d.P0[0] + 2 * (1 - u) * u * C[0] + u * u * d.P1[0];
+          y = (1 - u) * (1 - u) * d.P0[1] + 2 * (1 - u) * u * C[1] + u * u * d.P1[1];
+          sc = lerp(1.8, 1.1, u);
+        } else {
+          if (!d.bounced) { d.bounced = true; Sound.bonk(); burst(d.P1[0], d.P1[1] - 26, pick(['БОНК!', 'ДЫНЬ!', 'ТУК!']), '#ffffff', 0.85); shake = 3; }
+          const v = easeOutCubic((p - SPLIT) / (1 - SPLIT)), C = [(d.P1[0] + d.P2[0]) / 2 + (d.P1[0] < 190 ? -30 : 30), Math.min(d.P1[1], d.P2[1]) - 60];
+          x = (1 - v) * (1 - v) * d.P1[0] + 2 * (1 - v) * v * C[0] + v * v * d.P2[0];
+          y = (1 - v) * (1 - v) * d.P1[1] + 2 * (1 - v) * v * C[1] + v * v * d.P2[1];
+          sc = lerp(1.1, 0.95, v);
+        }
+        const rot = d.r0 + d.spin * easeOutCubic(p);
+        if (now - d.lastFace > 70 && p < 0.92) { d.lastFace = now; this.setFace(d, ri(1, 6)); }
+        d.g.setAttribute('transform', `translate(${f1(x)} ${f1(y)}) rotate(${f1(rot)}) scale(${sc.toFixed(3)})`);
+        // комиксные линии движения
+        if (d.prev && p < 1) {
+          const dx = x - d.prev[0], dy = y - d.prev[1], sp = Math.hypot(dx, dy);
+          if (sp > 0.5) {
+            const ux = dx / sp, uy = dy / sp, nx = -uy, ny = ux, len = Math.min(80, 18 + sp * 7);
+            d.lines.forEach((l, i) => {
+              const o = (i - 1) * 11, s = 24 + Math.abs(i - 1) * 6, ln = len * (i === 1 ? 1 : 0.65);
+              l.setAttribute('x1', f1(x - ux * s + nx * o)); l.setAttribute('y1', f1(y - uy * s + ny * o));
+              l.setAttribute('x2', f1(x - ux * (s + ln) + nx * o)); l.setAttribute('y2', f1(y - uy * (s + ln) + ny * o));
+            });
+            d.trail.style.display = '';
+          }
+        }
+        d.prev = [x, y];
+        if (p >= 1 && !d.landed) {
+          d.landed = true; d.landT = now; this.setFace(d, d.val); d.trail.style.display = 'none';
+          const [cx, cy] = d.P2;
+          d.crack.setAttribute('d', `M ${cx - 20} ${cy + 14} l -10 6 l -4 8 M ${cx + 20} ${cy + 12} l 10 4 l 3 9 M ${cx - 18} ${cy - 16} l -9 -7 M ${cx + 18} ${cy - 16} l 8 -9`);
+          d.crack.style.display = '';
+          Sound.thud(); shake = 8;
+          burst(cx + (cx < 190 ? -40 : 40), cy - 40, this.landedCount ? 'ТЫДЫЩ!' : 'ХРЯСЬ!', '#ffd23f', 1);
+          this.landedCount++;
+          if (this.landedCount === 2) {
+            this.active = false; this.stuck = true;
+            const r = this.resolve; this.resolve = null;
+            setTimeout(() => { this.dice.forEach(dd => dd.g.setAttribute('transform', `translate(${dd.P2[0]} ${dd.P2[1]}) rotate(${f1(dd.endRot)}) scale(0.95)`)); r && r(); }, dur(260));
+          }
+        }
+      });
+    } else if (this.stuck && Think.active) {
+      this.dice.forEach(d => d.g.setAttribute('transform', `translate(${f1(d.P2[0] + rnd(-1.2, 1.2))} ${f1(d.P2[1] + rnd(-1.2, 1.2))}) rotate(${f1(d.endRot + rnd(-3, 3))}) scale(0.95)`));
+    }
+  },
+  clear() {
+    this.stuck = false; this.active = false;
+    this.dice.forEach(d => { d.g.style.display = 'none'; d.trail.style.display = 'none'; d.crack.style.display = 'none'; });
+  }
+};
+
+/* ================= МЫШЛЕНИЕ ================= */
+const Think = {
+  active: false, t0: 0, lastFlash: 0, lastBzyn: 0, lastPct: 0, capIdx: -1, caps: [], resolve: null, D: 2600,
+  run() {
+    return new Promise(res => {
+      this.resolve = res; this.D = dur(CONFIG.THINK_MS); this.caps = shuffle(CAPTIONS); this.capIdx = -1;
+      this.t0 = performance.now(); this.active = true;
+      $('#thinkBox').classList.remove('hidden');
+      setEmotion('thinking');
+    });
+  },
+  update(now, dt) {
+    if (!this.active) return;
+    const el2 = now - this.t0, t = now / 1000;
+    if (now - this.lastFlash > 55) {
+      this.lastFlash = now;
+      const n = pick(neuronList); n.v = 1;
+      if (Math.random() < 0.6) {
+        const s = synList.find(q => q.v <= 0.05) || pick(synList), a = pick(neuronList), b = pick(neuronList);
+        if (a !== b) { s.v = 1; s.l.setAttribute('x1', f1(a.x)); s.l.setAttribute('y1', f1(a.y)); s.l.setAttribute('x2', f1(b.x)); s.l.setAttribute('y2', f1(b.y)); a.v = 1; b.v = 1; }
+      }
+      if (now - this.lastBzyn > 190) { this.lastBzyn = now; Sound.bzyn(); }
+    }
+    const decay = dt / 380;
+    neuronList.forEach(n => { n.v = Math.max(0, n.v - decay); n.c.setAttribute('r', f1(2.5 + 10 * n.v)); n.c.setAttribute('opacity', (0.25 + 0.75 * n.v).toFixed(2)); });
+    synList.forEach(s => { s.v = Math.max(0, s.v - decay * 1.3); s.l.setAttribute('opacity', s.v.toFixed(2)); s.l.setAttribute('stroke-width', f1(1.5 + 3 * s.v)); s.l.setAttribute('stroke-dashoffset', f1(-t * 60)); });
+    const ci = Math.floor(el2 / dur(CONFIG.CAPTION_MS)) % this.caps.length;
+    if (ci !== this.capIdx) { this.capIdx = ci; const tt = $('#thinkText'); tt.textContent = this.caps[ci]; tt.classList.remove('pop'); void tt.offsetWidth; tt.classList.add('pop'); }
+    if (now - this.lastPct > 280) {
+      this.lastPct = now;
+      const pct = el2 / this.D > 0.85 ? 100 : ri(1, 99);
+      $('#thinkFill').style.width = pct + '%';
+      $('#thinkPct').textContent = pct === 100 ? 'Загрузка мысли: 100% (мысль не найдена, принято решение)' : 'Загрузка мысли: ' + pct + '%';
+    }
+    // пупил крутится
+    el.pupil.setAttribute('cx', f1(300 + Math.cos(t * 7) * 4)); el.pupil.setAttribute('cy', f1(203 + Math.sin(t * 7) * 3));
+    if (el2 >= this.D) this.stop();
+  },
+  stop() {
+    this.active = false;
+    neuronList.forEach(n => { n.v = 0; n.c.setAttribute('opacity', 0); });
+    synList.forEach(s => { s.v = 0; s.l.setAttribute('opacity', 0); });
+    $('#thinkBox').classList.add('hidden');
+    const r = this.resolve; this.resolve = null; r && r();
+  }
+};
+
+/* ================= ЦИКЛ АНИМАЦИИ ================= */
+let shake = 0, lastT = performance.now(), nextBlink = 2000, blinkT = -1, nextSmoke = 0, nextQ = 0;
+function tick(now) {
+  const dt = Math.min(50, now - lastT); lastT = now; const t = now / 1000;
+  el.rays.setAttribute('transform', `translate(200 195) rotate(${f1((t * 6) % 360)})`);
+  shake = Math.max(0, shake - dt * 0.03);
+  const bob = Math.sin(t * 1.8) * 2;
+  el.headWrap.setAttribute('transform', `translate(${f1(rnd(-shake, shake))} ${f1(bob + rnd(-shake, shake))})`);
+  // мозг: сжатие при мышлении
+  let sx = brainScaleBase, sy = brainScaleBase;
+  if (Think.active) { const w = Math.sin(t * 9); sx *= 1 - 0.07 * w * w; sy *= 1 + 0.035 * w; }
+  else { const w = Math.sin(t * 2); sx *= 1 + 0.008 * w; sy *= 1 + 0.008 * w; }
+  el.brainGroup.setAttribute('transform', `translate(190 150) scale(${sx.toFixed(4)} ${sy.toFixed(4)}) translate(-190 -150)`);
+  // моргание
+  if (now > nextBlink && blinkT < 0) { blinkT = now; }
+  if (blinkT >= 0) {
+    const k = (now - blinkT) / 140; const s = k < 1 ? Math.max(0.08, Math.abs(1 - 2 * k)) : 1;
+    el.eye.setAttribute('transform', `translate(300 205) scale(1 ${s.toFixed(2)}) translate(-300 -205)`);
+    if (k >= 1) { blinkT = -1; nextBlink = now + rnd(1800, 4800); el.eye.removeAttribute('transform'); }
+  }
+  if (!Think.active) {
+    const px = currentEmo === 'crazy' ? 300 + Math.cos(t * 10) * 4 : 304, py = currentEmo === 'crazy' ? 205 + Math.sin(t * 10) * 3 : 205;
+    el.pupil.setAttribute('cx', f1(px)); el.pupil.setAttribute('cy', f1(py));
+  }
+  el.pupilHi.setAttribute('cx', f1(+el.pupil.getAttribute('cx') + 2)); el.pupilHi.setAttribute('cy', f1(+el.pupil.getAttribute('cy') - 2));
+  Dice.update(now);
+  Think.update(now, dt);
+  Fly.update(t);
+  if (stage >= 9) {
+    if (now > nextSmoke) { nextSmoke = now + 420; smokePuff(); }
+    if (now > nextQ) { nextQ = now + 1300; questionMark(); }
+  }
+  updateParticles(dt);
+  requestAnimationFrame(tick);
+}
+
+/* ================= ИГРОВАЯ ЛОГИКА ================= */
+const S = { mode: 'start', busy: false, orderNo: 0, orders: [], debuffs: [], reactions: [0, 0, 0], diceTotal: 0, rolls: 0, debuffBag: [], current: null };
+let orderBag = [];
+function maxDebuffs() { return clamp(CONFIG.MAX_DEBUFFS | 0, 1, DEBUFFS.length); }
+function stageFor(n) { return Math.round(n * 10 / maxDebuffs()); }
+function drawOrder() { if (!orderBag.length) orderBag = shuffle(ORDERS.map((_, i) => i)); return ORDERS[orderBag.pop()]; }
+
+const ui = {
+  startBtn: $('#startBtn'), rollBtn: $('#rollBtn'), hint: $('#hint'), startTitle: $('#startTitle'),
+  orderBadge: $('#orderBadge'), hudMid: $('#hudMid'), hudSpacer: $('#hudSpacer'), pText: $('#pText'), pFill: $('#pFill'),
+  orderOv: $('#orderOv'), debuffOv: $('#debuffOv'), finalOv: $('#finalOv'), muteBtn: $('#muteBtn')
+};
+
+function updateHUD() {
+  const m = maxDebuffs(), n = S.debuffs.length;
+  ui.orderBadge.textContent = 'Приказов: ' + S.orderNo;
+  ui.pText.textContent = n + '/' + m;
+  ui.pFill.style.width = (n / m * 100) + '%';
+}
+function enableRoll() {
+  S.busy = false; ui.rollBtn.disabled = false; ui.rollBtn.classList.add('pulse');
+  ui.hint.textContent = pick(HINTS);
+  setEmotion('neutral');
+}
+function newGame() {
+  Object.assign(S, { mode: 'play', busy: false, orderNo: 0, orders: [], debuffs: [], reactions: [0, 0, 0], diceTotal: 0, rolls: 0, debuffBag: shuffle(DEBUFFS), current: null });
+  particles.slice().forEach(p => p.el.remove()); particles.length = 0;
+  Dice.clear(); applyStage(0, false); updateHUD();
+  ui.startTitle.classList.add('hidden'); ui.startBtn.classList.add('hidden'); ui.rollBtn.classList.remove('hidden');
+  ui.orderBadge.classList.remove('hidden'); ui.hudMid.classList.remove('hidden'); ui.hudSpacer.classList.add('hidden');
+  enableRoll();
+}
+
+async function roll() {
+  if (S.busy || S.mode !== 'play') return;
+  S.busy = true; ui.rollBtn.disabled = true; ui.rollBtn.classList.remove('pulse');
+  Sound.init(); Sound.click();
+  ui.hint.textContent = 'Кубики летят в светлую голову…';
+  const a = ri(1, 6), b = ri(1, 6);
+  S.rolls++; S.diceTotal += a + b;
+  setEmotion('shocked');
+  await Dice.throw(a, b);
+  ui.hint.textContent = 'Не мешайте, руководство думает.';
+  await Think.run();
+  showOrder(a, b);
+}
+
+function showOrder(a, b) {
+  S.orderNo++;
+  const o = { no: S.orderNo, date: pick(DAYS) + ' ' + pick(YEARS), text: drawOrder(), a, b };
+  S.orders.push(o); S.current = o;
+  updateHUD();
+  $('#orderTitle').textContent = 'ПРИКАЗ №' + o.no;
+  $('#orderDate').textContent = 'от ' + o.date;
+  $('#orderText').textContent = o.text;
+  $('#orderMeta').textContent = `Степень обдуманности: ${a + b} из 12 (на кубиках ${a} и ${b}). Основание: ${pick(REASONS)}.`;
+  $('#avBubble').textContent = pick(BUBBLES);
+  const q = $('#quip'); q.classList.add('hidden'); q.textContent = '';
+  document.querySelectorAll('#reactRow .r-btn').forEach(bn => { bn.disabled = false; bn.classList.remove('chosen'); });
+  $('#reactRow').classList.remove('hidden'); $('#nextRow').classList.add('hidden');
+  const st = $('#stamp'); st.classList.remove('slam'); void st.offsetWidth; st.classList.add('slam');
+  setTimeout(() => { if (!ui.orderOv.classList.contains('hidden')) Sound.stamp(); }, 520);
+  setEmotion(pick(EMOTIONS));
+  ui.orderOv.classList.remove('hidden');
+  $('#orderScroll').scrollTop = 0;
+  ui.hint.textContent = 'Приказ издан. Реагируйте. Это ни на что не повлияет.';
+}
+
+function react(r) {
+  if (!S.current || S.current.reacted !== undefined) return;
+  S.current.reacted = r; S.reactions[r]++;
+  Sound.reaction(r);
+  document.querySelectorAll('#reactRow .r-btn').forEach(bn => { bn.disabled = true; if (+bn.dataset.r === r) bn.classList.add('chosen'); });
+  const q = $('#quip');
+  q.innerHTML = '';
+  q.appendChild(document.createTextNode(pick(QUIPS[r])));
+  const sm = document.createElement('small'); sm.textContent = pick(NOTE); q.appendChild(sm);
+  q.classList.remove('hidden');
+  setEmotion(r === 2 ? 'smug' : pick(['angry', 'smug', 'crazy']));
+  setTimeout(() => {
+    $('#reactRow').classList.add('hidden'); $('#nextRow').classList.remove('hidden');
+    q.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }, 350);
+}
+
+function showDebuff() {
+  ui.orderOv.classList.add('hidden');
+  Dice.clear();
+  const d = S.debuffBag.pop();
+  S.debuffs.push(d);
+  const n = S.debuffs.length, m = maxDebuffs(), st = stageFor(n);
+  $('#dName').textContent = d[0];
+  $('#dFlavor').textContent = d[1];
+  $('#dFx').textContent = STAGE_FX[clamp(st, 1, 10) - 1];
+  $('#dCount').textContent = `Диагнозов: ${n} из ${m}` + (n >= m ? '. Мозг заполнен полностью.' : '');
+  $('#dOk').textContent = n >= m ? 'Ой всё' : 'Ну и ладно';
+  // перезапуск анимации названия
+  const dn = $('#dName'); dn.style.animation = 'none'; void dn.offsetWidth; dn.style.animation = '';
+  ui.debuffOv.classList.remove('hidden');
+  Sound.sad();
+}
+
+async function closeDebuff() {
+  if (ui.debuffOv.classList.contains('hidden')) return;
+  ui.debuffOv.classList.add('hidden');
+  Sound.click();
+  applyStage(stageFor(S.debuffs.length), true);
+  updateHUD();
+  setEmotion('shocked');
+  if (S.debuffs.length >= maxDebuffs()) {
+    S.mode = 'final';
+    ui.hint.textContent = 'Мозг заполнен. Подводим итоги…';
+    await wait(dur(1600));
+    showFinal();
+  } else {
+    await wait(dur(700));
+    enableRoll();
+  }
+}
+
+function showFinal() {
+  const total = S.orders.length;
+  const idx = Math.round(S.diceTotal * 11.3 + total * 37 + S.reactions[2] * 13 + S.reactions[1] * 7 + ri(0, 99));
+  const tiles = [
+    [total, 'приказов издано за эпоху'],
+    [S.rolls * 2, `кубиков брошено в голову (сумма очков: ${S.diceTotal})`],
+    [S.debuffs.length, 'диагнозов поставлено'],
+    [idx + ' / 100', 'Индекс абсурда (выше нормы в ' + Math.max(2, Math.round(idx / 100)) + ' раз)'],
+  ];
+  const fs = $('#fStats'); fs.innerHTML = '';
+  tiles.forEach(([b, s]) => { const d = document.createElement('div'); d.className = 'tile'; const bb = document.createElement('b'); bb.textContent = b; const sp = document.createElement('span'); sp.textContent = s; d.append(bb, sp); fs.appendChild(d); });
+  const rt = document.createElement('div'); rt.className = 'tile wide';
+  const rb = document.createElement('b'); rb.textContent = `😐 ${S.reactions[0]}   🙈 ${S.reactions[1]}   😭 ${S.reactions[2]}`;
+  const rs = document.createElement('span'); rs.textContent = `Вы смирились ${S.reactions[0]} раз, игнорировали ${S.reactions[1]} раз, плакали ${S.reactions[2]} раз. Влияние на итог: 0%.`;
+  rt.append(rb, rs); fs.appendChild(rt);
+  const ol = $('#fOrders'); ol.innerHTML = '';
+  S.orders.forEach(o => { const li = document.createElement('li'); const i = document.createElement('i'); i.textContent = `№${o.no} от ${o.date}`; li.append(i, document.createElement('br'), document.createTextNode(o.text)); ol.appendChild(li); });
+  ol.scrollTop = 0;
+  const ch = $('#fDiag'); ch.innerHTML = '';
+  S.debuffs.forEach(d => { const c = document.createElement('span'); c.className = 'chip'; c.textContent = d[0]; c.title = d[1]; ch.appendChild(c); });
+  $('#fTitle').textContent = pick(TITLES);
+  $('#fPhrase').textContent = pick(PHRASES);
+  ui.finalOv.classList.remove('hidden');
+  ui.finalOv.querySelector('.card-scroll').scrollTop = 0;
+  Sound.fanfare();
+}
+
+/* ================= СОБЫТИЯ ================= */
+ui.startBtn.addEventListener('click', () => { Sound.init(); Sound.click(); newGame(); });
+ui.rollBtn.addEventListener('click', roll);
+document.querySelectorAll('#reactRow .r-btn').forEach(b => b.addEventListener('click', () => react(+b.dataset.r)));
+$('#nextBtn').addEventListener('click', () => { if (!S.current || S.current.reacted === undefined || ui.orderOv.classList.contains('hidden')) return; Sound.click(); showDebuff(); });
+$('#dOk').addEventListener('click', closeDebuff);
+$('#restartBtn').addEventListener('click', () => { ui.finalOv.classList.add('hidden'); Sound.click(); newGame(); });
+document.addEventListener('pointerdown', () => Sound.init(), { passive: true });
+function renderMute() { ui.muteBtn.textContent = Sound.muted ? '🔇' : '🔊'; ui.muteBtn.setAttribute('aria-label', Sound.muted ? 'Включить звук' : 'Выключить звук'); }
+ui.muteBtn.addEventListener('click', () => { Sound.init(); Sound.setMuted(!Sound.muted); renderMute(); try { localStorage.setItem('babushka-muted', Sound.muted ? '1' : '0'); } catch (e) { } });
+try { Sound.muted = localStorage.getItem('babushka-muted') === '1'; } catch (e) { }
+renderMute();
+
+/* ================= СТАРТ ================= */
+buildScene();
+Fly.init();
+Dice.init();
+applyStage(0, false);
+setEmotion('neutral');
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>
